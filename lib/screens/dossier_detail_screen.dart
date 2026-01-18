@@ -17,6 +17,23 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   final PrioriteRepository prioriteRepository = PrioriteRepository();
   final DossierRepository dossierRepository = DossierRepository();
 
+  Color prioriteColorFromLabel(String label) {
+    switch (label.toLowerCase()) {
+      case 'urgent':
+        return Colors.red;
+      case 'a traiter':
+        return Colors.orange;
+      case 'en attente':
+        return Colors.green;
+      case 'a encaisser':
+        return Colors.purple;
+      case 'a archiver':
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
+  }
+
   late int _selectedPrioriteId;
   late Future<List<Priorite>> _prioritesFuture;
 
@@ -27,6 +44,8 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   late TextEditingController _refTribController;
   late TextEditingController _dateCreationController;
   late TextEditingController _dateArchiveController;
+  late TextEditingController _noArchiveController;
+  late bool _archive;
 
   DateTime? parseDateString(String s) {
     final v = s.trim();
@@ -52,13 +71,13 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   void initState() {
     super.initState();
 
-  String formatDate(DateTime? d) {
-  if (d == null) return '';
-  final dd = d.day.toString().padLeft(2, '0');
-  final mm = d.month.toString().padLeft(2, '0');
-  final yyyy = d.year.toString();
-  return '$dd.$mm.$yyyy';
-  }
+    String formatDate(DateTime? d) {
+      if (d == null) return '';
+      final dd = d.day.toString().padLeft(2, '0');
+      final mm = d.month.toString().padLeft(2, '0');
+      final yyyy = d.year.toString();
+      return '$dd.$mm.$yyyy';
+    }
 
     _selectedPrioriteId = widget.dossier.prioriteId;
     _prioritesFuture = prioriteRepository.getAllPriorites();
@@ -81,6 +100,10 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     _dateArchiveController = TextEditingController(
       text: formatDate(widget.dossier.dateArchive),
     );
+    _archive = widget.dossier.archive;
+    _noArchiveController = TextEditingController(
+      text: widget.dossier.noArchive?.toString() ?? '',
+    );
   }
 
   @override
@@ -90,6 +113,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     _tvaController.dispose();
     _afaireController.dispose();
     _refTribController.dispose();
+    _noArchiveController.dispose();
     super.dispose();
   }
 
@@ -110,13 +134,16 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                 Expanded(
                   flex: 3,
                   child: TextFormField(
+                    style:TextStyle(fontWeight: FontWeight.bold),
                     controller: _libelleController,
                     decoration: const InputDecoration(
                       labelText: 'Libellé',
                       border: OutlineInputBorder(),
+                      fillColor: Color(0xFFFFFFCC),
+                      filled: true,)
                     ),
                   ),
-                ),
+                
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
@@ -132,16 +159,38 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
                       final priorites = snapshot.data!;
 
+                      final currentLabel = priorites
+                          .firstWhere(
+                            (p) => p.id == _selectedPrioriteId,
+                            orElse: () => priorites.first,
+                          )
+                          .label;
+                      final color = prioriteColorFromLabel(currentLabel);
+
                       return DropdownButtonFormField<int>(
                         initialValue: _selectedPrioriteId,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Priorité',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: color.withAlpha(30),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: color),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: color, width: 2),
+                          ),
                         ),
+                        style: TextStyle(color: color),
+                        iconEnabledColor: color,
                         items: priorites.map((p) {
+                          final itemColor = prioriteColorFromLabel(p.label);
                           return DropdownMenuItem(
                             value: p.id,
-                            child: Text(p.label),
+                            child: Text(
+                              p.label,
+                              style: TextStyle(color: itemColor),
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -167,6 +216,8 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               decoration: const InputDecoration(
                 labelText: 'À faire',
                 border: OutlineInputBorder(),
+                fillColor: Color(0xFFCCCCFF),
+                filled: true,
               ),
             ),
 
@@ -246,9 +297,28 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                       ),
 
                       Row(
-                        spacing: 5,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          const SizedBox(width: 8),
                           Expanded(
+                            flex: 1,
+                            child: CheckboxListTile(
+                              value: _archive,
+                              onChanged: (value) {
+                                setState(() {
+                                  _archive = value ?? false;
+                                });
+                              },
+                              title: const Text('Archivé'),
+                              dense: true,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
                             child: TextFormField(
                               controller: _dateArchiveController,
                               decoration: const InputDecoration(
@@ -259,17 +329,17 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                               keyboardType: TextInputType.datetime,
                             ),
                           ),
+
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
-                              initialValue: widget.dossier.noArchive
-                                  .toString(),
-                              enabled: false,
+                              controller: _noArchiveController,
                               decoration: const InputDecoration(
                                 labelText: 'No archivage',
                                 border: OutlineInputBorder(),
                                 isDense: true,
                               ),
+                              keyboardType: TextInputType.number,
                             ),
                           ),
                         ],
@@ -305,10 +375,12 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                   afaire: _afaireController.text.trim().isEmpty
                       ? null
                       : _afaireController.text.trim(),
-                    dateCreation: parseDateString(_dateCreationController.text),
-                    dateArchive: parseDateString(_dateArchiveController.text),
-                  noArchive: widget.dossier.noArchive,
-                  archive: widget.dossier.archive,
+                  dateCreation: parseDateString(_dateCreationController.text),
+                  dateArchive: parseDateString(_dateArchiveController.text),
+                    noArchive: _noArchiveController.text.trim().isEmpty
+                      ? null
+                      : int.tryParse(_noArchiveController.text.trim()),
+                  archive: _archive,
                   refTribunal: _refTribController.text.trim().isEmpty
                       ? null
                       : _refTribController.text.trim(),
