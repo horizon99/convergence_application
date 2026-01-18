@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import '../data/repositories/dossier_repository.dart';
+import '../models/dossier.dart';
+import 'dossier_detail_screen.dart';
+
+class DossiersListScreen extends StatefulWidget {
+  const DossiersListScreen({super.key});
+
+  @override
+  State<DossiersListScreen> createState() => _DossiersListScreenState();
+}
+
+class _DossiersListScreenState extends State<DossiersListScreen> {
+  final DossierRepository repository = DossierRepository();
+  late Future<List<Dossier>> _dossiersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDossiers();
+  }
+
+  void _loadDossiers() {
+    _dossiersFuture = repository.getAllDossiers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dossiers en cours')),
+      body: FutureBuilder<List<Dossier>>(
+        future: _dossiersFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Erreur : ${snapshot.error}'));
+          }
+
+          final dossiers = snapshot.data ?? [];
+
+          if (dossiers.isEmpty) {
+            return const Center(child: Text('Aucun dossier'));
+          }
+
+          return ListView.builder(
+            itemCount: dossiers.length,
+            itemBuilder: (context, index) {
+              final dossier = dossiers[index];
+
+              return ListTile(
+                leading: Chip(
+                  avatar: Icon(
+                    dossier.prioriteIcon,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    dossier.prioriteLabel,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: dossier.prioriteColor,
+                ),
+                title: Text(dossier.libelle),
+                subtitle: Text('A faire: ${dossier.afaire}'),
+                onTap: () async {
+                  final updatedDossier = await Navigator.of(context).push<Dossier>(
+                    MaterialPageRoute(
+                      builder: (_) => DossierDetailScreen(dossier: dossier),
+                    ),
+                  );
+
+                  if (updatedDossier != null) {
+                    setState(() {
+                      _loadDossiers();
+                    });
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}

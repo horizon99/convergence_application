@@ -1,6 +1,6 @@
 [
   {
     "type": "sqlite",
-    "path": "f:\\Synology\\Marc\\Informatique\\Flutter\\Convergence\\convergence_application\\lib\\convergence_data.sqlite"
+    "path": "f:\\Synology\\Marc\\Informatique\\Flutter\\Convergence\\convergence_application\\assets\\db\\convergence_db.sqlite"
   }
 ]

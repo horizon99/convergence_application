@@ -1,7 +1,29 @@
+import 'package:convergence_application/screens/dossiers_list_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  runApp(const MyApp());
+   // Initialisation obligatoire pour Desktop
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+  runApp(const ConvergenceApp());
+}
+
+class ConvergenceApp extends StatelessWidget {
+  const ConvergenceApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Convergence',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: DossiersListScreen(),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -34,7 +56,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -52,7 +73,6 @@ class MyHomePage extends StatefulWidget {
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
