@@ -1,0 +1,217 @@
+
+-- Table: contacts
+CREATE TABLE contacts ( 
+    ID_Contact   INTEGER         PRIMARY KEY AUTOINCREMENT
+                                 NOT NULL,
+    Nom          VARCHAR( 50 )   NOT NULL,
+    Prenom       VARCHAR( 50 )   DEFAULT 'NULL',
+    Adresse      TEXT            DEFAULT 'NULL',
+    Titre        TINYTEXT        DEFAULT 'NULL',
+    Tel_fixe     TINYTEXT        DEFAULT 'NULL',
+    Tel_mobile   TINYTEXT        DEFAULT 'NULL',
+    Email        TINYTEXT        DEFAULT 'NULL',
+    Appel_lettre TINYTEXT        DEFAULT 'NULL',
+    Fin_lettre   TINYTEXT        DEFAULT 'NULL',
+    Remarques    TEXT            DEFAULT 'NULL',
+    Adresse2     VARCHAR( 150 )  DEFAULT 'NULL',
+    NoRue        VARCHAR( 10 )   DEFAULT 'NULL',
+    NoPostal     VARCHAR( 50 )   DEFAULT 'NULL',
+    Localite     VARCHAR( 50 )   DEFAULT 'NULL' 
+);
+
+
+-- Table: mediateur
+CREATE TABLE mediateur ( 
+    ID_Mediateur     INTEGER         PRIMARY KEY AUTOINCREMENT
+                                     NOT NULL,
+    Nom              VARCHAR( 50 )   NOT NULL,
+    Titre            VARCHAR( 50 )   NOT NULL,
+    Adresse          VARCHAR( 500 )  NOT NULL,
+    TVA              TINYINT( 4 )    DEFAULT 'NULL',
+    EnTeteRapport    VARCHAR( 50 )   DEFAULT 'NULL',
+    Localite         VARCHAR( 50 )   DEFAULT 'NULL',
+    Logo             MEDIUMBLOB      DEFAULT 'NULL',
+    EnTetePapier     VARCHAR( 500 )  DEFAULT 'NULL',
+    Facture_Adresse  VARCHAR( 100 )  DEFAULT 'NULL',
+    Facture_NoRue    VARCHAR( 50 )   DEFAULT 'NULL',
+    Facture_NoPostal VARCHAR( 50 )   DEFAULT 'NULL',
+    Facture_Localite VARCHAR( 50 )   DEFAULT 'NULL',
+    Telephone        VARCHAR( 50 )   DEFAULT 'NULL',
+    Iban             VARCHAR( 50 )   DEFAULT 'NULL',
+    Email            VARCHAR( 50 )   DEFAULT 'NULL' 
+);
+
+
+-- Table: modeles_tarifs
+CREATE TABLE modeles_tarifs ( 
+    ID_ModeleTarif INTEGER        PRIMARY KEY AUTOINCREMENT
+                                  NOT NULL,
+    Modèle         VARCHAR( 50 )  DEFAULT 'NULL' 
+);
+
+
+-- Table: priorite
+CREATE TABLE priorite ( 
+    ID_Priorite INTEGER  PRIMARY KEY AUTOINCREMENT
+                         NOT NULL,
+    lblPriorite TINYTEXT NOT NULL 
+);
+
+
+-- Table: dossiers
+CREATE TABLE dossiers ( 
+    ID_Dossier    INTEGER           PRIMARY KEY AUTOINCREMENT
+                                    NOT NULL,
+    Libelle       VARCHAR( 200 )    NOT NULL,
+    Tarif         INT( 11 )         NOT NULL
+                                    DEFAULT '0',
+    TVA           DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    Priorite      TINYINT( 4 )      NOT NULL
+                                    DEFAULT '1',
+    Afaire        TEXT              DEFAULT 'NULL',
+    Date_creation DATE              DEFAULT 'CURRENT_TIMESTAMP',
+    Date_archive  DATE              DEFAULT 'NULL',
+    No_archive    INT( 11 )         DEFAULT 'NULL',
+    Archive       TINYINT( 1 )      NOT NULL
+                                    DEFAULT '0',
+    Ref_tribunal  VARCHAR( 50 )     DEFAULT 'NULL' 
+);
+
+
+-- Table: activites
+CREATE TABLE activites ( 
+    ID_Activite INTEGER           PRIMARY KEY AUTOINCREMENT
+                                  NOT NULL,
+    DateOp      DATE              NOT NULL,
+    Libelle     VARCHAR( 250 )    NOT NULL,
+    Minutes     DECIMAL( 32, 0 )  DEFAULT 'NULL',
+    Frais       DECIMAL( 32, 0 )  DEFAULT 'NULL',
+    DossierID   INTEGER           NOT NULL
+                                  REFERENCES dossiers ( ID_Dossier ) ON DELETE CASCADE
+                                                                     ON UPDATE CASCADE,
+    Tarif       INT( 11 )         NOT NULL
+                                  DEFAULT '1' 
+);
+
+
+-- Table: correspondances
+CREATE TABLE correspondances ( 
+    ID_Correspondance INTEGER         PRIMARY KEY AUTOINCREMENT
+                                      NOT NULL,
+    DossierID         INTEGER         NOT NULL
+                                      REFERENCES dossiers ( ID_Dossier ) ON DELETE CASCADE
+                                                                         ON UPDATE CASCADE,
+    Titre             VARCHAR( 100 )  DEFAULT 'NULL',
+    Texte             MEDIUMTEXT      DEFAULT 'NULL',
+    DestinataireID    INTEGER         NOT NULL
+                                      REFERENCES contacts ( ID_Contact ) ON DELETE CASCADE
+                                                                         ON UPDATE CASCADE 
+);
+
+
+-- Table: facturation
+CREATE TABLE facturation ( 
+    ID_Facture    INTEGER           PRIMARY KEY AUTOINCREMENT
+                                    NOT NULL,
+    DateOp        DATE              NOT NULL,
+    Libelle       TEXT              DEFAULT 'NULL',
+    Facturable    DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    Debit         DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    Credit        DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    Solde         DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    FraisHT       DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    DossierID     INTEGER           NOT NULL
+                                    REFERENCES dossiers ( ID_Dossier ) ON DELETE CASCADE
+                                                                       ON UPDATE CASCADE,
+    ContactID     INTEGER           NOT NULL
+                                    REFERENCES contacts ( ID_Contact ) ON DELETE CASCADE
+                                                                       ON UPDATE CASCADE,
+    T1_Heures     TIME              DEFAULT 'NULL',
+    T2_Heures     TIME              DEFAULT 'NULL',
+    T1_Texte      VARCHAR( 500 )    DEFAULT 'NULL',
+    T2_Texte      VARCHAR( 500 )    DEFAULT 'NULL',
+    T1_Montant    DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    T2_Montant    DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    TauxTVA       DECIMAL( 10, 3 )  DEFAULT 'NULL',
+    TotalHT       DECIMAL( 10, 2 )  DEFAULT 'NULL',
+    Participation DECIMAL( 10, 3 )  DEFAULT 'NULL',
+    Conditions    VARCHAR( 500 )    DEFAULT 'NULL',
+    T1_Frais      DECIMAL( 10, 0 )  DEFAULT 'NULL',
+    T2_Frais      DECIMAL( 10, 0 )  DEFAULT 'NULL',
+    T3_Heures     TIME              DEFAULT 'NULL',
+    T3_Texte      VARCHAR( 500 )    DEFAULT 'NULL',
+    T3_Montant    DECIMAL( 10, 0 )  DEFAULT 'NULL',
+    T3_Frais      DECIMAL( 10, 0 )  DEFAULT 'NULL',
+    Activites_du  DATE              DEFAULT 'NULL',
+    Activites_au  DATE              DEFAULT 'NULL' 
+);
+
+
+-- Table: parties
+CREATE TABLE parties ( 
+    ID_Partie  INTEGER           PRIMARY KEY AUTOINCREMENT
+                                 NOT NULL,
+    ContactID  INTEGER           NOT NULL
+                                 REFERENCES contacts ( ID_Contact ) ON DELETE CASCADE
+                                                                    ON UPDATE CASCADE,
+    DossierID  INTEGER           NOT NULL
+                                 REFERENCES dossiers ( ID_Dossier ) ON DELETE CASCADE
+                                                                    ON UPDATE CASCADE,
+    Attention  VARCHAR( 200 )    DEFAULT 'NULL',
+    Role       TINYTEXT          DEFAULT 'NULL',
+    Concerne   TEXT              DEFAULT 'NULL',
+    Facturable DECIMAL( 10, 0 )  DEFAULT 'NULL' 
+);
+
+
+-- Table: tarifs
+CREATE TABLE tarifs ( 
+    ID_Tarif      INTEGER           PRIMARY KEY AUTOINCREMENT
+                                    NOT NULL,
+    ID_Modele     INTEGER           NOT NULL
+                                    REFERENCES modeles_tarifs ( ID_ModeleTarif ),
+    Libelle       VARCHAR( 50 )     NOT NULL,
+    Tarif         DECIMAL( 32, 0 )  NOT NULL,
+    Texte_rapport VARCHAR( 100 )    DEFAULT 'NULL' 
+);
+
+
+-- Index: idx_contacts
+CREATE INDEX idx_contacts ON contacts ( 
+    ID_Contact 
+);
+
+
+-- Index: idx_dossiers
+CREATE INDEX idx_dossiers ON dossiers ( 
+    ID_Dossier 
+);
+
+
+-- Index: idx_activites
+CREATE INDEX idx_activites ON activites ( 
+    DossierID,
+    DateOp    ASC 
+);
+
+
+-- Index: idx_correspondances
+CREATE INDEX idx_correspondances ON correspondances ( 
+    DossierID,
+    DestinataireID 
+);
+
+
+-- Index: idx_facturation
+CREATE INDEX idx_facturation ON facturation ( 
+    DossierID,
+    ContactID 
+);
+
+
+-- Index: idx_parties
+CREATE INDEX idx_parties ON parties ( 
+    DossierID,
+    ContactID 
+);
+
