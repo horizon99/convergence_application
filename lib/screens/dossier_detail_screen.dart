@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import '../models/dossier.dart';
-import '../models/priorite.dart';
+import '../models/dossier_model.dart';
+import '../models/priorite_model.dart';
+import '../models/parties_model.dart';
 import '../data/repositories/priorite_repository.dart';
 import '../data/repositories/dossier_repository.dart';
+import '../data/repositories/parties_repository.dart';
+import '../app_helper.dart';
+import 'parties_edit_screen.dart';
 
 class DossierDetailScreen extends StatefulWidget {
   final Dossier dossier;
@@ -16,6 +20,7 @@ class DossierDetailScreen extends StatefulWidget {
 class _DossierDetailScreenState extends State<DossierDetailScreen> {
   final PrioriteRepository prioriteRepository = PrioriteRepository();
   final DossierRepository dossierRepository = DossierRepository();
+  final PartiesRepository partiesRepository = PartiesRepository();
 
   Color prioriteColorFromLabel(String label) {
     switch (label.toLowerCase()) {
@@ -36,6 +41,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
   late int _selectedPrioriteId;
   late Future<List<Priorite>> _prioritesFuture;
+  late Future<List<Parties>> _partiesFuture;
 
   late TextEditingController _libelleController;
   late TextEditingController _tarifController;
@@ -81,6 +87,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
     _selectedPrioriteId = widget.dossier.prioriteId;
     _prioritesFuture = prioriteRepository.getAllPriorites();
+    _partiesFuture = partiesRepository.getPartiesByDossier(widget.dossier.id);
     _libelleController = TextEditingController(text: widget.dossier.libelle);
     _tarifController = TextEditingController(
       text: widget.dossier.tarif.toString(),
@@ -104,6 +111,12 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     _noArchiveController = TextEditingController(
       text: widget.dossier.noArchive?.toString() ?? '',
     );
+  }
+
+  void _refreshParties() {
+    setState(() {
+      _partiesFuture = partiesRepository.getPartiesByDossier(widget.dossier.id);
+    });
   }
 
   @override
@@ -134,16 +147,17 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                 Expanded(
                   flex: 3,
                   child: TextFormField(
-                    style:TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                     controller: _libelleController,
                     decoration: const InputDecoration(
                       labelText: 'Libellé',
                       border: OutlineInputBorder(),
                       fillColor: Color(0xFFFFFFCC),
-                      filled: true,)
+                      filled: true,
                     ),
                   ),
-                
+                ),
+
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
@@ -222,6 +236,185 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
             ),
 
             const SizedBox(height: 16),
+
+            Card(
+              color: Colors.yellow[100],
+              child: Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: FutureBuilder<List<Parties>>(
+                  future: _partiesFuture,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const CircularProgressIndicator();
+                    }
+                    final parties = snapshot.data!;
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: parties.length + 1,
+                      itemBuilder: (context, index) {
+                        // 👉 Dernier élément = bouton "+"
+                        if (index == parties.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Center(
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.add),
+                                label: const Text('Ajouter un intervenant'),
+                                onPressed: () async {
+                                  final changed = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PartieEditScreen(
+                                        dossierId: widget.dossier.id,
+                                      ),
+                                    ),
+                                  );
+
+                                  if (changed == true) {
+                                    _refreshParties();
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        }
+
+                        final partie = parties[index];
+
+                        return ListTile(
+                          dense: true,
+                          visualDensity: const VisualDensity(vertical: -4),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+
+                          title: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 10,
+                            runSpacing: 2,
+                            children: [
+                              Text(
+                                partie.nomPrenom,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              if (partie.role?.isNotEmpty == true)
+                                Text(
+                                  partie.role!,
+                                  style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+
+                              if (partie.telFixe?.isNotEmpty == true) ...[
+                                const Text('–'),
+                                Text(partie.telFixe!),
+                              ],
+
+                              if (partie.telMobile?.isNotEmpty == true) ...[
+                                const Text('–'),
+                                Text(partie.telMobile!),
+                              ],
+
+                              if (partie.email?.isNotEmpty == true) ...[
+                                const Text('–'),
+                                MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        AppHelper.launchEmail(partie.email!),
+                                    child: Text(
+                                      partie.email!,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+
+                          trailing: Row(
+                            // Boutons Modifier / Supprimer
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Bouton Modifier
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 18),
+                                tooltip: 'Modifier',
+                                onPressed: () async {
+                                  final result = await Navigator.of(context)
+                                      .push(
+                                        MaterialPageRoute(
+                                          builder: (_) => PartieEditScreen(
+                                            dossierId: widget.dossier.id,
+                                            idPartie: partie.idPartie,
+                                          ),
+                                        ),
+                                      );
+                                  if (result == true) {
+                                    _refreshParties();
+                                  }
+                                },
+                              ),
+
+                              // Bouton Supprimer
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                ),
+                                tooltip: 'Supprimer',
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text(
+                                        'Supprimer l’intervenant',
+                                      ),
+                                      content: Text(
+                                        'Voulez-vous vraiment supprimer ${partie.nomPrenom} de ce dossier ?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Annuler'),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Supprimer'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    await partiesRepository.deletePartie(
+                                      partie.idPartie,
+                                    );
+
+                                    _refreshParties();
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
 
             /// ─────────────────────────────
             /// Bloc rétractable : infos complémentaires
@@ -352,60 +545,99 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               ),
             ),
 
-            // Bouton Enregistrer
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final priorites = await _prioritesFuture;
-                final selectedPrioriteLabel = priorites
-                    .firstWhere(
-                      (p) => p.id == _selectedPrioriteId,
-                      orElse: () => priorites.first,
-                    )
-                    .label;
-                final updated = Dossier(
-                  id: widget.dossier.id,
-                  libelle: _libelleController.text.trim(),
-                  tarif: int.tryParse(_tarifController.text.trim()) ?? 0,
-                  tva: _tvaController.text.trim().isEmpty
-                      ? null
-                      : double.tryParse(_tvaController.text.trim()),
-                  prioriteId: _selectedPrioriteId,
-                  prioriteLabel: selectedPrioriteLabel,
-                  afaire: _afaireController.text.trim().isEmpty
-                      ? null
-                      : _afaireController.text.trim(),
-                  dateCreation: parseDateString(_dateCreationController.text),
-                  dateArchive: parseDateString(_dateArchiveController.text),
-                    noArchive: _noArchiveController.text.trim().isEmpty
-                      ? null
-                      : int.tryParse(_noArchiveController.text.trim()),
-                  archive: _archive,
-                  refTribunal: _refTribController.text.trim().isEmpty
-                      ? null
-                      : _refTribController.text.trim(),
-                );
-
-                final rows = await dossierRepository.updateDossier(updated);
-
-                if (!mounted) return;
-
-                if (rows > 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Dossier enregistré')),
-                  );
-                  Navigator.pop(context, updated);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erreur: aucun enregistrement effectué'),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Enregistrer'),
-            ),
+            const SizedBox(height: 10),
+            // Suite du formulaire...
           ],
+        ),
+      ),
+
+      // Barre du bas avec boutons
+      bottomNavigationBar: BottomAppBar(
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              // Bouton pour les contacts/parties
+              TextButton.icon(
+                onPressed: () {
+                  // Navigator.push(
+                  //context,
+                  //MaterialPageRoute(
+                  //builder: (_) =>
+                  //DetailPartiesScreen(dossierId: widget.dossier.id),
+                  //);
+                },
+                icon: const Icon(Icons.people),
+                label: const Text('Intervenants'),
+              ),
+
+              // Bouton pour les factures
+              TextButton.icon(
+                onPressed: () {
+                  // écran Factures
+                },
+                icon: const Icon(Icons.receipt_long),
+                label: const Text('Factures'),
+              ),
+
+              const Spacer(),
+
+              // Save button
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final priorites = await _prioritesFuture;
+                  final selectedPrioriteLabel = priorites
+                      .firstWhere(
+                        (p) => p.id == _selectedPrioriteId,
+                        orElse: () => priorites.first,
+                      )
+                      .label;
+                  final updated = Dossier(
+                    id: widget.dossier.id,
+                    libelle: _libelleController.text.trim(),
+                    tarif: int.tryParse(_tarifController.text.trim()) ?? 0,
+                    tva: _tvaController.text.trim().isEmpty
+                        ? null
+                        : double.tryParse(_tvaController.text.trim()),
+                    prioriteId: _selectedPrioriteId,
+                    prioriteLabel: selectedPrioriteLabel,
+                    afaire: _afaireController.text.trim().isEmpty
+                        ? null
+                        : _afaireController.text.trim(),
+                    dateCreation: parseDateString(_dateCreationController.text),
+                    dateArchive: parseDateString(_dateArchiveController.text),
+                    noArchive: _noArchiveController.text.trim().isEmpty
+                        ? null
+                        : int.tryParse(_noArchiveController.text.trim()),
+                    archive: _archive,
+                    refTribunal: _refTribController.text.trim().isEmpty
+                        ? null
+                        : _refTribController.text.trim(),
+                  );
+
+                  final rows = await dossierRepository.updateDossier(updated);
+
+                  if (!mounted) return;
+
+                  if (rows > 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Dossier enregistré')),
+                    );
+                    Navigator.pop(context, updated);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Erreur: aucun enregistrement effectué'),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.save),
+                label: const Text('Enregistrer'),
+              ),
+            ],
+          ),
         ),
       ),
     );

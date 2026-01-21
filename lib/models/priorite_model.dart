@@ -13,4 +13,10 @@ class Priorite {
       label: map['lblPriorite'],
     );
   }
+  Map<String, dynamic> toMap() {
+    return {
+      'ID_Priorite': id,
+      'lblPriorite': label,
+    };
+  }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/repositories/dossier_repository.dart';
-import '../models/dossier.dart';
+import '../models/dossier_model.dart';
 import 'dossier_detail_screen.dart';
 
 class DossiersListScreen extends StatefulWidget {

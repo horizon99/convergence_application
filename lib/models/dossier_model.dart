@@ -65,6 +65,7 @@ class Dossier {
       archive: map['Archive'] == 1,
       refTribunal: map['Ref_tribunal'],
     );
+    
   }
    // 🎨 Couleur selon la priorité
   Color get prioriteColor {

@@ -1,6 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../database/database_helper.dart';
-import '../../models/dossier.dart';
+import '../../models/dossier_model.dart';
 
 class DossierRepository {
   Future<List<Dossier>> getAllDossiers() async {
@@ -51,4 +51,33 @@ Future<int> updateDossier(Dossier dossier) async {
     whereArgs: [dossier.id],
   );
   }
+}
+Future<int> deleteDossier(int idDossier) async {
+  final db = await DatabaseHelper.instance.database;
+
+  return await db.delete(
+    'dossiers',
+    where: 'ID_Dossier = ?',
+    whereArgs: [idDossier],
+  );
+}
+
+Future<int> insertDossier(Dossier dossier) async {
+  final db = await DatabaseHelper.instance.database;
+
+  return await db.insert(
+    'dossiers',
+    {
+      'Libelle': dossier.libelle,
+      'Tarif': dossier.tarif,
+      'TVA': dossier.tva,
+      'Priorite': dossier.prioriteId,
+      'Afaire': dossier.afaire,
+      'Ref_tribunal': dossier.refTribunal,
+      'Archive': dossier.archive ? 1 : 0,
+      'Date_archive': dossier.dateArchive?.toIso8601String(),
+      'No_archive': dossier.noArchive,
+      'Date_creation': dossier.dateCreation?.toIso8601String(),
+    },
+  );
 }

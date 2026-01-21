@@ -2,5 +2,9 @@
   {
     "type": "sqlite",
     "path": "f:\\Synology\\Marc\\Informatique\\Flutter\\Convergence\\convergence_application\\assets\\db\\convergence_db.sqlite"
+  },
+  {
+    "type": "sqlite",
+    "path": "f:\\Synology\\Marc\\Informatique\\Flutter\\Convergence\\convergence_application\\build\\windows\\x64\\runner\\Debug\\data\\flutter_assets\\assets\\db\\convergence_db.sqlite"
   }
 ]
