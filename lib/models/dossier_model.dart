@@ -13,6 +13,9 @@ class Dossier {
   final int? noArchive;
   final bool archive;
   final String? refTribunal;
+  final String? libelleClient;
+  final String? notes;
+
 
   Dossier({
     required this.id,
@@ -27,6 +30,8 @@ class Dossier {
     this.noArchive,
     required this.archive,
     required this.refTribunal,
+    this.libelleClient,
+    this.notes,
   });
 
   factory Dossier.fromMap(Map<String, dynamic> map) {
@@ -64,6 +69,8 @@ class Dossier {
       noArchive: map['No_archive'],
       archive: map['Archive'] == 1,
       refTribunal: map['Ref_tribunal'],
+      libelleClient: map['Libelle_Client'],
+      notes: map['Notes'],
     );
     
   }

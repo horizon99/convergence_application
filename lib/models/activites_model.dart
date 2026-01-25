@@ -1,11 +1,11 @@
 class Activite {
-  final int idActivite;
+  final int? idActivite;
   final DateTime dateOp;
   final String libelle;
-  final double? minutes;
+  final int? minutes;
   final double? frais;
   final int dossierId;
-  final int tarif;
+  final String tarif;
 
   Activite({
     required this.idActivite,
@@ -14,7 +14,7 @@ class Activite {
     this.minutes,
     this.frais,
     required this.dossierId,
-    this.tarif = 1,
+    this.tarif = '',
   });
 
   factory Activite.fromMap(Map<String, dynamic> map) {
@@ -22,10 +22,10 @@ class Activite {
       idActivite: map['ID_Activite'],
       dateOp: DateTime.parse(map['DateOp']),
       libelle: map['Libelle'],
-      minutes: map['Minutes']?.toDouble(),
-      frais: map['Frais']?.toDouble(),
+      minutes: map['Minutes'] != null ? (map['Minutes'] as num).toInt() : null,
+      frais: map['Frais'] != null ? (map['Frais'] as num).toDouble() : null,
       dossierId: map['DossierID'],
-      tarif: map['Tarif'],
+      tarif: map['Tarif']?.toString() ?? '',
     );
   }
 
@@ -40,4 +40,25 @@ class Activite {
       'Tarif': tarif,
     };
   }
+
+  Activite copyWith({
+    int? idActivite,
+    DateTime? dateOp,
+    String? libelle,
+    int? minutes,
+    double? frais,
+    int? dossierId,
+    String? tarif,
+  }) {
+    return Activite(
+      idActivite: idActivite ?? this.idActivite,
+      dateOp: dateOp ?? this.dateOp,
+      libelle: libelle ?? this.libelle,
+      minutes: minutes ?? this.minutes,
+      frais: frais ?? this.frais,
+      dossierId: dossierId ?? this.dossierId,
+      tarif: tarif ?? this.tarif,
+    );
+  }
+
 }
