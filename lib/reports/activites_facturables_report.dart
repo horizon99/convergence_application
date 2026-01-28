@@ -1,3 +1,4 @@
+import 'package:convergence_application/app_helper.dart';
 import 'package:convergence_application/data/repositories/mediateur_repository.dart';
 import 'package:convergence_application/models/mediateur_model.dart';
 import 'package:intl/intl.dart';
@@ -6,12 +7,14 @@ import 'package:pdf/widgets.dart' as pw;
 
 import 'package:convergence_application/models/activites_facturables_model.dart';
 
-class ActivitesReport {
+class ActivitesFacturablesReport {
   Future<pw.Document> buildReleveActivitesPdf({
     required List<ActiviteFacturable> activites,
     required DateTime dateDu,
     required DateTime dateAu,
     required String dossierLibelle,
+    required bool afficherFrais,
+    required bool afficherMontants,
   }) async {
     final pdf = pw.Document();
     final dateFmt = DateFormat('dd.MM.yyyy');
@@ -50,15 +53,16 @@ class ActivitesReport {
           child: pw.Row(
             children: [
               pw.Expanded(
-                child: 
-              pw.Text(dossierLibelle,
-                style: pw.TextStyle(
-                  fontSize: 12,
-                  fontWeight: pw.FontWeight.bold
-                )
+                child: pw.Text(
+                  dossierLibelle,
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
               ),
-              ),
-              pw.Text(mediateur.nom ?? 'Cabinet de médiation',
+              pw.Text(
+                mediateur.nom ?? 'Cabinet de médiation',
                 style: pw.TextStyle(
                   fontSize: 12,
                   fontWeight: pw.FontWeight.normal,
@@ -169,8 +173,9 @@ class ActivitesReport {
                     children: [
                       _th('Date'),
                       _th('Libellé'),
+                      if (afficherFrais)
+                        _th('Frais', align: pw.TextAlign.right),
                       _th('Minutes', align: pw.TextAlign.right),
-                      _th('Frais', align: pw.TextAlign.right),
                     ],
                   ),
                   ...activites.map(
@@ -178,12 +183,13 @@ class ActivitesReport {
                       children: [
                         _td(dateFmt.format(a.activite.dateOp)),
                         _td(a.activite.libelle),
+                        if (afficherFrais)
+                          _td(
+                            a.activite.frais?.toStringAsFixed(2) ?? '',
+                            align: pw.TextAlign.right,
+                          ),
                         _td(
                           a.activite.minutes?.toStringAsFixed(0) ?? '',
-                          align: pw.TextAlign.right,
-                        ),
-                        _td(
-                          a.activite.frais?.toStringAsFixed(2) ?? '',
                           align: pw.TextAlign.right,
                         ),
                       ],
@@ -196,14 +202,44 @@ class ActivitesReport {
               pw.SizedBox(height: 4),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  '${totalMinutesGroupe.toStringAsFixed(0)} minutes à CHF ${tarifHoraire.toStringAsFixed(2)}/h, '
-                  'CHF ${totalHonorairesGroupe.toStringAsFixed(2)}        '
-                  'CHF ${totalFraisGroupe.toStringAsFixed(2)}',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+                child: pw.Row(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    if (afficherMontants)
+                      pw.Text(
+                        '(${totalMinutesGroupe.toStringAsFixed(0)} minutes à CHF ${tarifHoraire.toStringAsFixed(2)}/h)',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    pw.SizedBox(width: 10),
+                    if (afficherFrais)
+                      pw.Container(
+                        width: 70,
+                        child: pw.Text(
+                          'CHF ${totalFraisGroupe.toStringAsFixed(2)}',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    pw.SizedBox(width: 10),
+                    if (afficherMontants)
+                      pw.Container(
+                        width: 70,
+                        child: pw.Text(
+                          'CHF ${totalHonorairesGroupe.toStringAsFixed(2)}',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ];
@@ -232,38 +268,44 @@ class ActivitesReport {
                   _tr('Temps'),
                   _tr('Heures'),
                   _tr(
-                    minutesToHours(totalMinutes.toInt()),
+                    AppHelper.minutesToHours(totalMinutes.toInt()),
                     align: pw.TextAlign.right,
                   ),
                 ],
               ),
-              pw.TableRow(
-                children: [
-                  _tr('Honoraires'),
-                  _tr('CHF'),
-                  _tr(
-                    totalHonoraires.toStringAsFixed(2),
-                    align: pw.TextAlign.right,
-                  ),
-                ],
-              ),
-              pw.TableRow(
-                children: [
-                  _tr('Frais'),
-                  _tr('CHF'),
-                  _tr(totalFrais.toStringAsFixed(2), align: pw.TextAlign.right),
-                ],
-              ),
-              pw.TableRow(
-                children: [
-                  _tr('Total honoraires et frais'),
-                  _tr('CHF'),
-                  _tr(
-                    totalMontant.toStringAsFixed(2),
-                    align: pw.TextAlign.right,
-                  ),
-                ],
-              ),
+              if (afficherFrais)
+                pw.TableRow(
+                  children: [
+                    _tr('Frais'),
+                    _tr('CHF'),
+                    _tr(
+                      totalFrais.toStringAsFixed(2),
+                      align: pw.TextAlign.right,
+                    ),
+                  ],
+                ),
+              if (afficherMontants)
+                pw.TableRow(
+                  children: [
+                    _tr('Honoraires'),
+                    _tr('CHF'),
+                    _tr(
+                      totalHonoraires.toStringAsFixed(2),
+                      align: pw.TextAlign.right,
+                    ),
+                  ],
+                ),
+              if (afficherMontants & afficherFrais)
+                pw.TableRow(
+                  children: [
+                    _tr('Montant honoraires et frais'),
+                    _tr('CHF'),
+                    _tr(
+                      totalMontant.toStringAsFixed(2),
+                      align: pw.TextAlign.right,
+                    ),
+                  ],
+                ),
             ],
           ),
         ],
@@ -304,11 +346,5 @@ class ActivitesReport {
         style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.normal),
       ),
     );
-  }
-
-  String minutesToHours(int minutes) {
-    final hours = minutes ~/ 60;
-    final remainingMinutes = minutes % 60;
-    return '${hours.toString().padLeft(2, '0')}:${remainingMinutes.toString().padLeft(2, '0')}';
   }
 }

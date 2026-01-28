@@ -696,7 +696,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                     MaterialPageRoute(
                       builder: (_) => ListActivitesScreen(
                         dossierId: widget.dossier.id,
-                        dossierLibelle: widget.dossier.libelle,
+                        dossierLibelleClient: widget.dossier.libelleClient  ?? widget.dossier.libelle,
                       ),
                     ),
                   );

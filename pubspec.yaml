@@ -40,6 +40,8 @@ dependencies:
   intl: ^0.20.2
   pdf: ^3.11.0
   printing: ^5.11.0
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
   # syncfusion_flutter_datagrid: ^22.4.48
 
 

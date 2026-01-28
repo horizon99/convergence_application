@@ -1,3 +1,5 @@
+import 'package:convergence_application/models/facture_contenu_model.dart';
+
 import '../database/database_helper.dart';
 import '../../models/activites_model.dart';
 import '../../models/activites_facturables_model.dart';
@@ -10,7 +12,7 @@ class ActivitesFacturablesRepository {
     DateTime? dateAu,
   }) async {
     final db = await DatabaseHelper.instance.database;
-    
+
     String whereClause = 'DossierID = ?';
     List<dynamic> whereArgs = [dossierId];
 
@@ -65,10 +67,65 @@ class ActivitesFacturablesRepository {
         activite: activite,
         tarifHoraire: (row['tarif_horaire'] as num).toDouble(),
         montantFacturable: (row['montant_facturable'] as num).toDouble(),
-        descriptionTarif: (row  ['description_tarif'] as String),
+        descriptionTarif: (row['description_tarif'] as String),
         groupeTarif: (row['groupe_tarif'] as String),
         ordreTarif: (row['ordre_tarif'] as int?),
       );
     }).toList();
+  }
+
+  Future<List<FactureContenu>> getMontantsFacturables(
+    int dossierId, {
+    DateTime? dateDu,
+    DateTime? dateAu,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+
+    String whereClause = 'a.DossierID = ?';
+    List<dynamic> whereArgs = [dossierId];
+
+    if (dateDu != null) {
+      whereClause += ' AND a.DateOp >= ?';
+      whereArgs.add(dateDu.toIso8601String());
+    }
+
+    if (dateAu != null) {
+      whereClause += ' AND a.DateOp <= ?';
+      whereArgs.add(dateAu.toIso8601String());
+    }
+
+    final baseSql = '''
+  SELECT 
+    t.Code AS code_tarif,
+    IFNULL(t.Description, t.Code) AS description_tarif,
+    IFNULL(t.Tarif, 0) AS tarif_horaire,
+    IFNULL(t.Ordre, 0) AS ordre_tarif,
+  SUM(CASE WHEN a.Minutes IS NOT NULL THEN a.Minutes ELSE 0 END) AS total_minutes,
+  SUM(CASE WHEN a.Frais IS NOT NULL THEN a.Frais ELSE 0 END) AS total_frais,
+  SUM(CASE WHEN t.Tarif IS NOT NULL THEN a.Minutes * t.Tarif ELSE 0 END)/60 AS total_honoraires
+  FROM 
+    activites a
+    LEFT OUTER JOIN tarifs t ON t.Code = a.Tarif
+    ''';
+
+    String sql = baseSql;
+    if (whereClause.isNotEmpty) {
+      sql += ' WHERE $whereClause';
+    }
+      sql += ' GROUP BY t.Code ORDER BY t.Ordre ASC';
+
+    final result = await db.rawQuery(sql, whereArgs);
+
+    return result.map((row) {
+      return FactureContenu(
+        codeTarif: row['code_tarif'] as String? ?? '',
+        descriptionTarif: row['description_tarif'] as String? ?? '',
+        montantTarif: (row['tarif_horaire'] as num? ?? 0).toDouble(),
+        ordreTarif: (row['ordre_tarif'] as int? ?? 0),
+        totalFrais: (row['total_frais'] as num? ?? 0).toDouble(),
+        totalHonoraires: (row['total_honoraires'] as num? ?? 0).toDouble(),
+        totalMinutes: (row['total_minutes'] as num? ?? 0).toInt(),
+      );
+    }).toList();    
   }
 }

@@ -1,19 +1,19 @@
+import 'package:convergence_application/screens/activites_facturables_dialog.dart';
+import 'package:convergence_application/screens/facture_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:printing/printing.dart';
 
 import '../data/repositories/activites_repository.dart';
 import '../data/repositories/activites_facturables_repository.dart';
 import '../models/activites_facturables_model.dart';
 import '../models/activites_model.dart';
-import '../reports/activites_facturables_report.dart';
 import 'activite_edit_dialog.dart';
 
 class ListActivitesScreen extends StatefulWidget {
   final int dossierId;
-  final String dossierLibelle;
+  final String dossierLibelleClient;
 
-  const ListActivitesScreen({super.key, required this.dossierId, required this.dossierLibelle});
+  const ListActivitesScreen({super.key, required this.dossierId, required this.dossierLibelleClient});
 
   @override
   State<ListActivitesScreen> createState() => _ListActivitesScreenState();
@@ -24,7 +24,7 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
 
   DateTime _dateDu = DateTime.now();
   DateTime _dateAu = DateTime.now();
-  String _dossierLibelle = '';
+  String _dossierLibelleClient = '';
   
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
       widget.dossierId,
     );
     _initDatesAndLoad();
-    _dossierLibelle = widget.dossierLibelle; 
+    _dossierLibelleClient = widget.dossierLibelleClient; 
   }
 
   Future<void> _initDatesAndLoad() async {
@@ -111,7 +111,7 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$_dossierLibelle: liste des activités'),
+        title: Text('$_dossierLibelleClient: liste des activités'),
         backgroundColor: Colors.blue[50],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(70),
@@ -350,24 +350,35 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FacturePrepare(
+                        dossierId: widget.dossierId,
+                        dateDu: _dateDu,
+                        dateAu: _dateAu,
+                      ),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.receipt),
                 label: const Text('Facture'),
               ),
               const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: () async {
-                  final data = await _activitesFuture; // tes données déjà filtrées
-                  final report = ActivitesReport();
-                  final pdf = await report.buildReleveActivitesPdf(
-                    activites: data,
-                    dateDu: _dateDu,
-                    dateAu: _dateAu,
-                    dossierLibelle: _dossierLibelle
-                  );
-                  final pdfBytes = await pdf.save() ;
-                  await Printing.layoutPdf(
-                    onLayout: (format) async => pdfBytes,
+                  final data = await _activitesFuture;
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return ActivitesFacturablesDialog(
+                        activites: data,
+                        dateDu: _dateDu,
+                        dateAu: _dateAu,
+                        dossierLibelle: _dossierLibelleClient,
+                      );
+                    },
                   );
                 },
                 icon: const Icon(Icons.list_alt),

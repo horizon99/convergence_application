@@ -3,6 +3,37 @@ import '../database/database_helper.dart';
 import '../../models/dossier_model.dart';
 
 class DossierRepository {
+  Future<Dossier?> getDossierById(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    final result = await db.rawQuery('''
+      SELECT 
+        d.ID_Dossier,
+        d.Libelle,
+        d.Tarif,
+        d.Priorite,
+        p.lblPriorite,
+        d.Archive,
+        d.TVA,
+        d.Afaire,
+        d.Date_creation,
+        d.Date_archive,
+        d.No_archive,
+        d.Ref_tribunal,
+        d.Libelle_Client,
+        d.Notes
+      FROM dossiers d
+      LEFT JOIN priorite p
+        ON p.ID_Priorite = d.Priorite
+      WHERE d.ID_Dossier = ?
+    ''', [id]);
+
+    if (result.isNotEmpty) {
+      return Dossier.fromMap(result.first);
+    }
+    return null;
+  }
+
+
   Future<List<Dossier>> getAllDossiers() async {
     final Database db = await DatabaseHelper.instance.database;
 

@@ -51,4 +51,10 @@ class AppHelper {
       await launchUrl(uri);
     }
   }
+
+  static String minutesToHours(int minutes) {
+    final hours = minutes ~/ 60;
+    final remainingMinutes = minutes % 60;
+    return '${hours.toString().padLeft(2, '0')}:${remainingMinutes.toString().padLeft(2, '0')}';
+  }
 }
