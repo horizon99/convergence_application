@@ -49,7 +49,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
           role: null,
           attention: '',
           concerne: '',
-          facturable: 0,
+          participation: 0,
         ),
       );
     }
@@ -62,7 +62,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
     _selectedRole = p.role;
     _attentionCtrl.text = p.attention ?? '';
     _concerneCtrl.text = p.concerne ?? '';
-    _facturableCtrl.text = p.facturable.toString();
+    _facturableCtrl.text = p.participation.toString();
   }
 
   @override
@@ -95,7 +95,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
                 role: null,
                 attention: '',
                 concerne: '',
-                facturable: 0,
+                participation: 0,
               ),
             );
           }
@@ -244,7 +244,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
                                 role: _selectedRole,
                                 attention: _attentionCtrl.text,
                                 concerne: _concerneCtrl.text,
-                                facturable: _facturableCtrl.text.isNotEmpty
+                                participation: _facturableCtrl.text.isNotEmpty
                                     ? int.tryParse(_facturableCtrl.text)
                                     : null,
                               );
@@ -257,7 +257,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
                                 role: _selectedRole,
                                 attention: _attentionCtrl.text,
                                 concerne: _concerneCtrl.text,
-                                facturable: _facturableCtrl.text.isNotEmpty
+                                participation: _facturableCtrl.text.isNotEmpty
                                     ? int.tryParse(_facturableCtrl.text)
                                     : null,
                               );

@@ -9,14 +9,14 @@ class Priorite {
 
   factory Priorite.fromMap(Map<String, dynamic> map) {
     return Priorite(
-      id: map['ID_Priorite'],
-      label: map['lblPriorite'],
+      id: map['id_priorite'],
+      label: map['priorite_text'],
     );
   }
   Map<String, dynamic> toMap() {
     return {
-      'ID_Priorite': id,
-      'lblPriorite': label,
+      'id_priorite': id,
+      'priorite_text': label,
     };
   }
 }

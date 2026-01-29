@@ -8,7 +8,7 @@ class PrioriteRepository {
 
     final result = await db.query(
       'priorite',
-      orderBy: 'ID_Priorite',
+      orderBy: 'id_priorite',
     );
 
     return result.map((e) => Priorite.fromMap(e)).toList();
@@ -19,9 +19,9 @@ Future<int> updatePriorite (Priorite priorite) async {
     return await db.update(
     'priorite',
     {
-      'lblPriorite': priorite.label,
+      'priorite': priorite.label,
     },
-    where: 'ID_Priorite = ?',
+    where: 'id_priorite = ?',
     whereArgs: [priorite.id],
   );
   }
@@ -31,7 +31,7 @@ Future<int> deletePriorite(int idPriorite) async {
 
   return await db.delete(
     'priorite',
-    where: 'ID_Priorite = ?',
+    where: 'id_priorite = ?',
     whereArgs: [idPriorite],
   );
 }

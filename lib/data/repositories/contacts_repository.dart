@@ -8,7 +8,7 @@ class ContactsRepository {
 
     final result = await db.query(
       'contacts',
-      orderBy: 'ID_Contact',
+      orderBy: 'id_contact ASC',
     );
 
     return result.map((e) => Contact.fromMap(e)).toList();
@@ -19,7 +19,7 @@ class ContactsRepository {
 
     final result = await db.query(
       'contacts',
-      where: 'ID_Contact = ?',
+      where: 'id_contact = ?',
       whereArgs: [id],
     );
 
@@ -36,22 +36,22 @@ class ContactsRepository {
     return await db.update(
       'contacts',
       {
-        'Nom': contact.nom,
-        'Prenom': contact.prenom,
-        'Adresse': contact.adresse,
-        'Titre': contact.titre,
-        'Tel_fixe': contact.telFixe,
-        'Tel_mobile': contact.telMobile,
-        'Email': contact.email,
-        'Appel_lettre': contact.appelLettre,
-        'Fin_lettre': contact.finLettre,
-        'Remarques': contact.remarques,
-        'Adresse2': contact.adresse2,
-        'NoRue': contact.noRue,
-        'NoPostal': contact.noPostal,
-        'Localite': contact.localite,
+        'nom': contact.nom,
+        'prenom': contact.prenom,
+        'adresse': contact.adresse,
+        'titre': contact.titre,
+        'tel_fixe': contact.telFixe,
+        'tel_mobile': contact.telMobile,
+        'email': contact.email,
+        'appel_lettre': contact.appelLettre,
+        'fin_lettre': contact.finLettre,
+        'remarques': contact.remarques,
+        'adresse2': contact.adresse2,
+        'no_rue': contact.noRue,
+        'no_postal': contact.noPostal,
+        'localite': contact.localite,
       },
-      where: 'ID_Contact = ?',
+      where: 'id_contact = ?',
       whereArgs: [contact.id],
     );
   }
@@ -60,7 +60,7 @@ class ContactsRepository {
 
     return await db.delete(
       'contacts',
-      where: 'ID_Contact = ?',
+      where: 'id_contact = ?',
       whereArgs: [idContact],
     );
   }

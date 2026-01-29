@@ -250,10 +250,10 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
                               _cell(
                                 DateFormat(
                                   'dd.MM.yyyy',
-                                ).format(a.activite.dateOp),
+                                ).format(a.activite.dateActivite),
                                 flex: 2,
                               ),
-                              _cell(a.activite.tarif.toString(), flex: 1),
+                              _cell(a.activite.codeTarif.toString(), flex: 1),
                               _cell(a.activite.libelle, flex: 4),
                               _cell(
                                 a.activite.minutes?.toStringAsFixed(0) ?? '',

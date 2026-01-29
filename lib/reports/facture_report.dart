@@ -102,7 +102,7 @@ class FactureReport {
     final tableData = data.content.map((item) {
       final double facturable = (item.totalHonoraires ?? 0) + (item.totalFrais ?? 0);
       return [
-        item.descriptionTarif,
+        item.texteFacture ?? '',
         item.totalMinutes,
         NumberFormat.currency(symbol: 'CHF').format(item.montantTarif),
         NumberFormat.currency(symbol: 'CHF')

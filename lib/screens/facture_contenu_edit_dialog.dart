@@ -9,26 +9,29 @@ class FactureContenuEditDialog extends StatefulWidget {
 }
 
 class _FactureContenuEditDialogState extends State<FactureContenuEditDialog> {
-  late TextEditingController _descriptionController;
+  late TextEditingController _texteFactureController;
   late TextEditingController _honorairesController;
   late TextEditingController _fraisController;
   late TextEditingController _minutesController;
+  late TextEditingController _montantTarifController;
 
   @override
   void initState() {
     super.initState();
-    _descriptionController = TextEditingController(text: widget.initialData['descriptionTarif'] ?? '');
+    _texteFactureController = TextEditingController(text: widget.initialData['texteFacture'] ?? '');
     _honorairesController = TextEditingController(text: (widget.initialData['totalHonoraires'] ?? '').toString());
     _fraisController = TextEditingController(text: (widget.initialData['totalFrais'] ?? '').toString());
     _minutesController = TextEditingController(text: (widget.initialData['totalMinutes'] ?? '').toString());
+    _montantTarifController = TextEditingController(text: (widget.initialData['montantTarif'] ?? '').toString());
   }
 
   @override
   void dispose() {
-    _descriptionController.dispose();
+    _texteFactureController.dispose();
     _honorairesController.dispose();
     _fraisController.dispose();
     _minutesController.dispose();
+    _montantTarifController.dispose();
     super.dispose();
   }
 
@@ -41,8 +44,28 @@ class _FactureContenuEditDialogState extends State<FactureContenuEditDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
+              controller: _texteFactureController,
+              decoration: const InputDecoration(labelText: 'Texte Facture'),
+            ),
+            TextFormField(
+              controller: _montantTarifController,
+              decoration: const InputDecoration(labelText: 'Tarif horaire'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) => setState(() {
+                final tarif = double.tryParse(value) ?? 0;
+                final honoraires = (tarif / 60) * (int.tryParse(_minutesController.text) ?? 0);
+                _honorairesController.text = honoraires.toStringAsFixed(2);
+              }),
+            ),
+            TextFormField(
+              controller: _minutesController,
+              decoration: const InputDecoration(labelText: 'Minutes'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) => setState(() {
+                final minutes = int.tryParse(value) ?? 0;
+                final honoraires = (minutes / 60) * (double.tryParse(_montantTarifController.text) ?? 0);
+                _honorairesController.text = honoraires.toStringAsFixed(2);
+              }),
             ),
             TextFormField(
               controller: _honorairesController,
@@ -52,11 +75,6 @@ class _FactureContenuEditDialogState extends State<FactureContenuEditDialog> {
             TextFormField(
               controller: _fraisController,
               decoration: const InputDecoration(labelText: 'Frais'),
-              keyboardType: TextInputType.number,
-            ),
-            TextFormField(
-              controller: _minutesController,
-              decoration: const InputDecoration(labelText: 'Minutes'),
               keyboardType: TextInputType.number,
             ),
           ],
@@ -70,10 +88,11 @@ class _FactureContenuEditDialogState extends State<FactureContenuEditDialog> {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop({
-              'descriptionTarif': _descriptionController.text,
+              'texteFacture': _texteFactureController.text,
               'totalHonoraires': double.tryParse(_honorairesController.text) ?? 0.0,
               'totalFrais': double.tryParse(_fraisController.text) ?? 0.0,
               'totalMinutes': int.tryParse(_minutesController.text) ?? 0,
+              'montantTarif': double.tryParse(_montantTarifController.text) ?? 0.0,
             });
           },
           child: const Text('OK'),

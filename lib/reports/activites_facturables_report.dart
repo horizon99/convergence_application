@@ -26,7 +26,9 @@ class ActivitesFacturablesReport {
     final Map<String, List<ActiviteFacturable>> groupes = {};
 
     for (final a in activites) {
-      final code = a.activite.tarif;
+      final code = a.activite.codeTarif.isNotEmpty
+          ? a.activite.codeTarif
+          : '-';
       groupes.putIfAbsent(code, () => []).add(a);
     }
 
@@ -115,7 +117,7 @@ class ActivitesFacturablesReport {
           /// ───────────── GROUPES
           ...groupesTries.expand((groupe) {
             final activites = groupe.value
-              ..sort((a, b) => a.activite.dateOp.compareTo(b.activite.dateOp));
+              ..sort((a, b) => a.activite.dateActivite.compareTo(b.activite.dateActivite));
 
             final tarifHoraire = activites.first.tarifHoraire;
             final descriptionTarif = activites.first.descriptionTarif;
@@ -181,7 +183,7 @@ class ActivitesFacturablesReport {
                   ...activites.map(
                     (a) => pw.TableRow(
                       children: [
-                        _td(dateFmt.format(a.activite.dateOp)),
+                        _td(dateFmt.format(a.activite.dateActivite)),
                         _td(a.activite.libelle),
                         if (afficherFrais)
                           _td(

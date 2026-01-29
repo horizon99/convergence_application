@@ -13,54 +13,54 @@ class ActivitesFacturablesRepository {
   }) async {
     final db = await DatabaseHelper.instance.database;
 
-    String whereClause = 'DossierID = ?';
+    String whereClause = 'dossier_id = ?';
     List<dynamic> whereArgs = [dossierId];
 
     if (dateDu != null) {
-      whereClause += ' AND DateOp >= ?';
+      whereClause += ' AND date_activite >= ?';
       whereArgs.add(dateDu.toIso8601String());
     }
 
     if (dateAu != null) {
-      whereClause += ' AND DateOp <= ?';
+      whereClause += ' AND date_activite <= ?';
       whereArgs.add(dateAu.toIso8601String());
     }
 
     final baseSql = '''
     SELECT
-      a.ID_Activite,
-      a.DateOp,
-      a.Libelle,
-      a.Minutes,
-      a.Frais,
-      a.DossierID,
-      a.Tarif AS code_tarif,
-      IFNULL(t.Description, a.Tarif) AS description_tarif,
-      IFNULL(t.Tarif, 0) AS tarif_horaire,
-      (( IFNULL(a.Minutes, 0) * IFNULL(t.Tarif, 0)/60 ) + IFNULL(a.Frais, 0)) AS montant_facturable,
-      IFNULL(t.Groupe, '-') AS groupe_tarif,
-      IFNULL(t.Ordre, 0) AS ordre_tarif
+      a.id_activite,
+      a.date_activite,
+      a.libelle,
+      a.minutes,
+      a.frais,
+      a.dossier_id,
+      a.code_tarif,
+      IFNULL(t.description, a.code_tarif) AS description_tarif,
+      IFNULL(t.tarif_horaire, 0) AS tarif_horaire,
+      (( IFNULL(a.minutes, 0) * IFNULL(t.tarif_horaire, 0)/60 ) + IFNULL(a.frais, 0)) AS montant_facturable,
+      IFNULL(t.groupe, '-') AS groupe_tarif,
+      IFNULL(t.ordre, 0) AS ordre_tarif
     FROM activites a
-    LEFT OUTER JOIN tarifs t ON t.Code = a.Tarif
+    LEFT OUTER JOIN tarifs t ON t.code = a.code_tarif
   ''';
 
     String sql = baseSql;
     if (whereClause.isNotEmpty) {
       sql += ' WHERE $whereClause';
     }
-    sql += ' ORDER BY a.DateOp ASC';
+    sql += ' ORDER BY a.date_activite ASC';
 
     final result = await db.rawQuery(sql, whereArgs);
 
     return result.map((row) {
       final activite = Activite(
-        idActivite: row['ID_Activite'] as int,
-        dateOp: DateTime.parse(row['DateOp'] as String),
-        libelle: row['Libelle'] as String,
-        minutes: (row['Minutes'] as num?)?.toInt(),
-        frais: (row['Frais'] as num?)?.toDouble(),
-        dossierId: row['DossierID'] as int,
-        tarif: row['code_tarif'] as String,
+        idActivite: row['id_activite'] as int,
+        dateActivite: DateTime.parse(row['date_activite'] as String),
+        libelle: row['libelle'] as String,
+        minutes: (row['minutes'] as num?)?.toInt(),
+        frais: (row['frais'] as num?)?.toDouble(),
+        dossierId: row['dossier_id'] as int,
+        codeTarif: row['code_tarif'] as String,
       );
 
       return ActiviteFacturable(
@@ -81,45 +81,46 @@ class ActivitesFacturablesRepository {
   }) async {
     final db = await DatabaseHelper.instance.database;
 
-    String whereClause = 'a.DossierID = ?';
+    String whereClause = 'a.dossier_id = ?';
     List<dynamic> whereArgs = [dossierId];
 
     if (dateDu != null) {
-      whereClause += ' AND a.DateOp >= ?';
+      whereClause += ' AND a.date_activite >= ?';
       whereArgs.add(dateDu.toIso8601String());
     }
 
     if (dateAu != null) {
-      whereClause += ' AND a.DateOp <= ?';
+      whereClause += ' AND a.date_activite <= ?';
       whereArgs.add(dateAu.toIso8601String());
     }
 
     final baseSql = '''
   SELECT 
-    t.Code AS code_tarif,
-    IFNULL(t.Description, t.Code) AS description_tarif,
-    IFNULL(t.Tarif, 0) AS tarif_horaire,
-    IFNULL(t.Ordre, 0) AS ordre_tarif,
-  SUM(CASE WHEN a.Minutes IS NOT NULL THEN a.Minutes ELSE 0 END) AS total_minutes,
-  SUM(CASE WHEN a.Frais IS NOT NULL THEN a.Frais ELSE 0 END) AS total_frais,
-  SUM(CASE WHEN t.Tarif IS NOT NULL THEN a.Minutes * t.Tarif ELSE 0 END)/60 AS total_honoraires
+    t.code AS code_tarif,
+    IFNULL(t.description, t.code) AS description_tarif,
+    IFNULL(t.tarif_horaire, 0) AS tarif_horaire,
+    IFNULL(t.ordre, 0) AS ordre_tarif,
+    IFNULL(t.texte_facture, '') AS texte_facture,
+  SUM(CASE WHEN a.minutes IS NOT NULL THEN a.minutes ELSE 0 END) AS total_minutes,
+  SUM(CASE WHEN a.frais IS NOT NULL THEN a.frais ELSE 0 END) AS total_frais,
+  SUM(CASE WHEN t.tarif_horaire IS NOT NULL THEN a.minutes * t.tarif_horaire ELSE 0 END)/60 AS total_honoraires
   FROM 
     activites a
-    LEFT OUTER JOIN tarifs t ON t.Code = a.Tarif
+    LEFT OUTER JOIN tarifs t ON t.code = a.code_tarif
     ''';
 
     String sql = baseSql;
     if (whereClause.isNotEmpty) {
       sql += ' WHERE $whereClause';
     }
-      sql += ' GROUP BY t.Code ORDER BY t.Ordre ASC';
+      sql += ' GROUP BY t.code ORDER BY t.ordre ASC';
 
     final result = await db.rawQuery(sql, whereArgs);
 
     return result.map((row) {
       return FactureContenu(
         codeTarif: row['code_tarif'] as String? ?? '',
-        descriptionTarif: row['description_tarif'] as String? ?? '',
+        texteFacture: row['texte_facture'] as String? ?? '',
         montantTarif: (row['tarif_horaire'] as num? ?? 0).toDouble(),
         ordreTarif: (row['ordre_tarif'] as int? ?? 0),
         totalFrais: (row['total_frais'] as num? ?? 0).toDouble(),

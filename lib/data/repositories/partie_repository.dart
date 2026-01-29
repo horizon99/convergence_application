@@ -3,16 +3,15 @@ import '../database/database_helper.dart';
 import '../../models/partie_model.dart';
 
 class PartieRepository {
-
   Future<List<Partie>> getPartieByDossier(int dossierId) async {
     final Database db = await DatabaseHelper.instance.database;
 
-  final result = await db.query(
-    'parties',
-    where: 'DossierID = ?',
-    whereArgs: [dossierId],
-    orderBy: 'Role ASC',
-  );
+    final result = await db.query(
+      'parties',
+      where: 'dossier_id = ?',
+      whereArgs: [dossierId],
+      orderBy: 'role ASC',
+    );
 
     return result.map((e) => Partie.fromMap(e)).toList();
   }
@@ -21,45 +20,42 @@ class PartieRepository {
     final db = await DatabaseHelper.instance.database;
     final result = await db.query(
       'parties',
-      where: 'ID_Partie = ?',
+      where: 'id_partie = ?',
       whereArgs: [idPartie],
-    );  
+    );
     return Partie.fromMap(result.first);
   }
 
-  Future<int> updatePartie (Partie partie) async {
-  final db = await DatabaseHelper.instance.database;
-  return await db.update(
-    'parties',
-    partie.toMap(),
-    where: 'ID_Partie = ?',
-    whereArgs: [partie.idPartie],
-  );
-}
-
-Future<int> deletePartie(int idPartie) async {
-  final db = await DatabaseHelper.instance.database;
-
-  return await db.delete(
-    'parties',
-    where: 'ID_Partie = ?',
-    whereArgs: [idPartie],
-  );
-}
-
-Future<int> insertPartie(Partie partie) async {
-  final db = await DatabaseHelper.instance.database;
-
-  try {
-    final result = await db.insert(
+  Future<int> updatePartie(Partie partie) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.update(
       'parties',
       partie.toMap(),
+      where: 'id_partie = ?',
+      whereArgs: [partie.idPartie],
     );
-    //print('Insert successful, new ID: $result');
-    return result;
-  } catch (e) {
-    //print('Error inserting partie: $e');
-    rethrow;
   }
-}
+
+  Future<int> deletePartie(int idPartie) async {
+    final db = await DatabaseHelper.instance.database;
+
+    return await db.delete(
+      'parties',
+      where: 'id_partie = ?',
+      whereArgs: [idPartie],
+    );
+  }
+
+  Future<int> insertPartie(Partie partie) async {
+    final db = await DatabaseHelper.instance.database;
+
+    try {
+      final result = await db.insert('parties', partie.toMap());
+      //print('Insert successful, new ID: $result');
+      return result;
+    } catch (e) {
+      //print('Error inserting partie: $e');
+      rethrow;
+    }
+  }
 }

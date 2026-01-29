@@ -6,7 +6,7 @@ class FactureRepository {
   Future<List<Facture>> getAllFactures() async {
     final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query('facture');
+    final result = await db.query('factures');
 
     return result.map((e) => Facture.fromMap(e)).toList();
   }
@@ -15,9 +15,9 @@ class FactureRepository {
     final db = await DatabaseHelper.instance.database;
 
     return await db.update(
-      'facture',
+      'factures',
       facture.toMap(),
-      where: 'ID_Facture = ?',
+      where: 'id_facture = ?',
       whereArgs: [facture.idFacture],
     );
   }
@@ -32,8 +32,8 @@ class FactureRepository {
     final db = await DatabaseHelper.instance.database;
 
     return await db.delete(
-      'facture',
-      where: 'ID_Facture = ?',
+      'factures',
+      where: 'id_facture = ?',
       whereArgs: [idFacture],
     );
   }

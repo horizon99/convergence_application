@@ -1,6 +1,6 @@
 class FactureContenu {
   final String? codeTarif;
-  final String? descriptionTarif;
+  final String? texteFacture;
   final double? montantTarif;
   final int? ordreTarif;
   final int? totalMinutes;
@@ -9,7 +9,7 @@ class FactureContenu {
 
   FactureContenu({
    this.codeTarif,
-   this.descriptionTarif, 
+   this.texteFacture,
    this.montantTarif, 
    this.ordreTarif, 
    this.totalMinutes, 
@@ -20,7 +20,7 @@ class FactureContenu {
   factory FactureContenu.fromMap(Map<String, dynamic> map) {
     return FactureContenu(
       codeTarif: map['code_tarif'],
-      descriptionTarif: map['description_tarif'],
+      texteFacture: map['Texte_Tacture'],
       montantTarif: map['tarif_horaire'],
       ordreTarif: map['ordre_tarif'],
       totalMinutes: map['total_minutes'],

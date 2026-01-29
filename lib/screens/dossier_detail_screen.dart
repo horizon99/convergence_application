@@ -101,7 +101,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
       text: widget.dossier.libelleClient ?? '',
     );
     _tarifController = TextEditingController(
-      text: widget.dossier.tarif.toString(),
+      text: widget.dossier.groupeTarif ?? '',
     );
     _tvaController = TextEditingController(
       text: widget.dossier.tva?.toString() ?? '',
@@ -168,7 +168,9 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                 final updated = Dossier(
                   id: widget.dossier.id,
                   libelle: _libelleController.text.trim(),
-                  tarif: int.tryParse(_tarifController.text.trim()) ?? 0,
+                  groupeTarif: _tarifController.text.trim().isEmpty
+                      ? null
+                      : _tarifController.text.trim(),
                   tva: _tvaController.text.trim().isEmpty
                       ? null
                       : double.tryParse(_tvaController.text.trim()),
@@ -696,7 +698,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                     MaterialPageRoute(
                       builder: (_) => ListActivitesScreen(
                         dossierId: widget.dossier.id,
-                        dossierLibelleClient: widget.dossier.libelleClient  ?? widget.dossier.libelle,
+                        dossierLibelleClient: widget.dossier.libelle,
                       ),
                     ),
                   );

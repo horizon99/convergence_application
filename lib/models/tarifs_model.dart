@@ -4,6 +4,7 @@ class ModeleTarif {
   final String codeTarif;
   final int ordreTarif;
   final String? descriptionTarif;
+  final String? texteFacture;
   final int tarifHoraire;
 
   ModeleTarif({
@@ -12,29 +13,32 @@ class ModeleTarif {
     required this.codeTarif,
     required this.ordreTarif,
     this.descriptionTarif,
+    this.texteFacture,
     required this.tarifHoraire,
   });
     
        
     factory ModeleTarif.fromMap(Map<String, dynamic> map) {
     return ModeleTarif(
-      idTarif: map['ID_ModeleTarif'],
-      groupeTarif: map['Groupe'],
-      codeTarif: map['Code'],
-      ordreTarif: map['Ordre'],
-      descriptionTarif: map['Description'],
-      tarifHoraire: map['Tarif'],
+      idTarif: map['id_tarif'],
+      groupeTarif: map['groupe'],
+      codeTarif: map['code'],
+      ordreTarif: map['ordre'],
+      descriptionTarif: map['description'],
+      texteFacture: map['texte_facture'],
+      tarifHoraire: map['tarif_horaire'],
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'ID_ModeleTarif': idTarif,
-      'Groupe': groupeTarif,
-      'Code': codeTarif, 
-      'Ordre': ordreTarif,
-      'Description': descriptionTarif,
-      'Tarif': tarifHoraire,
+      'id_tarif': idTarif,
+      'groupe': groupeTarif,
+      'code': codeTarif, 
+      'ordre': ordreTarif,
+      'description': descriptionTarif,
+      'texte_facture': texteFacture,
+      'tarif_horaire': tarifHoraire,
     };
   }
 }

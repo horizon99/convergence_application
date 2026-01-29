@@ -23,7 +23,7 @@ class _ActiviteSaisieCardState extends State<ActiviteSaisieCard> {
   final _minutesController = TextEditingController();
   final _fraisController = TextEditingController();
 
-  DateTime _dateOp = DateTime.now();
+  DateTime _dateActivite = DateTime.now();
   String? _selectedTarif;
 
   late Future<List<ModeleTarif>> _tarifsFuture;
@@ -53,13 +53,13 @@ class _ActiviteSaisieCardState extends State<ActiviteSaisieCard> {
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate: _dateOp,
+                      initialDate: _dateActivite,
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
                       locale: const Locale('fr', 'CH'),
                     );
                     if (picked != null) {
-                      setState(() => _dateOp = picked);
+                      setState(() => _dateActivite = picked);
                     }
                   },
                   child: InputDecorator(
@@ -67,7 +67,7 @@ class _ActiviteSaisieCardState extends State<ActiviteSaisieCard> {
                       labelText: 'Date',
                       border: OutlineInputBorder(),
                     ),
-                    child: Text(DateFormat('dd.MM.yyyy').format(_dateOp)),
+                    child: Text(DateFormat('dd.MM.yyyy').format(_dateActivite)),
                   ),
                 ),
               ),
@@ -177,12 +177,12 @@ class _ActiviteSaisieCardState extends State<ActiviteSaisieCard> {
                     try {
                       final activite = Activite(
                         idActivite: null,
-                        dateOp: _dateOp,
+                        dateActivite: _dateActivite,
                         libelle: _libelleController.text,
                         minutes: int.tryParse(_minutesController.text),
                         frais: double.tryParse(_fraisController.text),
                         dossierId: widget.dossierId,
-                        tarif: _selectedTarif!,
+                        codeTarif: _selectedTarif!,
                       );
 
                       await ActivitesRepository().insertActivite(activite);
@@ -194,7 +194,7 @@ class _ActiviteSaisieCardState extends State<ActiviteSaisieCard> {
                       _fraisController.clear();
 
                       setState(() {
-                        _dateOp = DateTime.now();
+                        _dateActivite = DateTime.now();
                         _selectedTarif = null;
                       });
 

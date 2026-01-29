@@ -8,7 +8,7 @@ class ActivitesRepository {
 
     final List<Map<String, dynamic>> maps = await db.query(
       'activites',
-      orderBy: 'DateOp DESC',
+      orderBy: 'date_activite DESC',
     );
 
     return maps.map((e) => Activite.fromMap(e)).toList();
@@ -18,7 +18,7 @@ class ActivitesRepository {
     final Database db = await DatabaseHelper.instance.database;
 
     final List<Map<String, dynamic>> maps = await db.rawQuery(
-      'SELECT * FROM activites WHERE DossierID = ?',
+      'SELECT * FROM activites WHERE dossier_id = ?',
       [dossierId],
     );
 
@@ -31,14 +31,14 @@ class ActivitesRepository {
     return await db.update(
       'activites',
       {
-        'DossierID': activite.dossierId,
-        'DateOp': activite.dateOp.toIso8601String(),
-        'Libelle': activite.libelle,
-        'Minutes': activite.minutes,
-        'Frais': activite.frais,
-        'Tarif': activite.tarif,
+        'dossier_id': activite.dossierId,
+        'date_activite': activite.dateActivite.toIso8601String(),
+        'libelle': activite.libelle,
+        'minutes': activite.minutes,
+        'frais': activite.frais,
+        'code_tarif': activite.codeTarif,
       },
-      where: 'ID_Activite = ?',
+      where: 'id_activite = ?',
       whereArgs: [activite.idActivite],
     );
   }
@@ -47,7 +47,7 @@ class ActivitesRepository {
 
     return await db.delete(
       'activites',
-      where: 'ID_Activite = ?',
+      where: 'id_activite = ?',
       whereArgs: [idActivite],
     );
   }
@@ -65,7 +65,7 @@ class ActivitesRepository {
     final db = await DatabaseHelper.instance.database;
 
     final List<Map<String, dynamic>> result = await db.rawQuery(
-      'SELECT MIN(DateOp) as MinDate FROM activites WHERE DossierID = ?',
+      'SELECT MIN(date_activite) as MinDate FROM activites WHERE dossier_id = ?',
       [dossierId],
     );
 
@@ -82,16 +82,16 @@ class ActivitesRepository {
   }) async {
     final db = await DatabaseHelper.instance.database;
 
-    String whereClause = 'DossierID = ?';
+    String whereClause = 'dossier_id = ?';
     List<dynamic> whereArgs = [dossierId];
 
     if (dateDu != null) {
-      whereClause += ' AND DateOp >= ?';
+      whereClause += ' AND date_activite >= ?';
       whereArgs.add(dateDu.toIso8601String());
     }
 
     if (dateAu != null) {
-      whereClause += ' AND DateOp <= ?';
+      whereClause += ' AND date_activite <= ?';
       whereArgs.add(dateAu.toIso8601String());
     }
 
@@ -99,11 +99,10 @@ class ActivitesRepository {
       'activites',
       where: whereClause,
       whereArgs: whereArgs,
-      orderBy: 'DateOp DESC',
+      orderBy: 'date_activite DESC',
     );
 
     return maps.map((e) => Activite.fromMap(e)).toList();
   }
 
 }
-

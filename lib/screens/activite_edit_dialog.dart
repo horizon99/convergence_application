@@ -32,7 +32,7 @@ class _EditActiviteDialogState extends State<EditActiviteDialog> {
     _edit = widget.activite.copyWith();
 
     _libelleCtrl.text = _edit.libelle;
-    _tarifCrtl.text = _edit.tarif;
+    _tarifCrtl.text = _edit.codeTarif;
     _minutesCtrl.text = _edit.minutes?.toStringAsFixed(0) ?? '';
     _fraisCtrl.text = _edit.frais?.toStringAsFixed(2) ?? '';
   }
@@ -49,7 +49,7 @@ class _EditActiviteDialogState extends State<EditActiviteDialog> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _edit.dateOp,
+      initialDate: _edit.dateActivite,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -88,7 +88,7 @@ class _EditActiviteDialogState extends State<EditActiviteDialog> {
               child: InputDecorator(
                 decoration: const InputDecoration(labelText: 'Date'),
                 child: Text(
-                  DateFormat('dd.MM.yyyy').format(_edit.dateOp),
+                  DateFormat('dd.MM.yyyy').format(_edit.dateActivite),
                 ),
               ),
             ),

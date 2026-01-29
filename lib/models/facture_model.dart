@@ -31,41 +31,41 @@ class Facture {
 
   factory Facture.fromMap(Map<String, dynamic> map) {
     return Facture(
-      idFacture: map['ID_Facture'],
-      dateOp: DateTime.parse(map['DateOp']),
-      dossierID: map['DossierID'],
-      contactID: map['ContactID'],
-      titre: map['Titre'],
-      libelle: map['Libelle'],
-      conditions: map['Conditions'],
-      contenu: map['Contenu'],
-      facturable: map['Facturable'],
-      montant: map['Montant'],
-      participation: map['Participation'],
-      activitesDu: map['ActivitesDu'] != null
-          ? DateTime.parse(map['ActivitesDu'])
+      idFacture: map['id_facture'],
+      dateOp: DateTime.parse(map['date_op']),
+      dossierID: map['dossier_id'],
+      contactID: map['contact_id'],
+      titre: map['titre'],
+      libelle: map['libelle'],
+      conditions: map['conditions'],
+      contenu: map['contenu'],
+      facturable: map['montant_facture'],
+      montant: map['montant_total'],
+      participation: map['participation'],
+      activitesDu: map['activites_du'] != null
+          ? DateTime.parse(map['activites_du'])
           : null,
-      activiteAu: map['ActiviteAu'] != null
-          ? DateTime.parse(map['ActiviteAu'])
+      activiteAu: map['activite_au'] != null
+          ? DateTime.parse(map['activite_au'])
           : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'ID_Facture': idFacture,
-      'DateOp': dateOp.toIso8601String(),
-      'DossierID': dossierID,
-      'ContactID': contactID,
-      'Titre': titre,
-      'Libelle': libelle,
-      'Conditions': conditions,
-      'Contenu': contenu,
-      'Facturable': facturable,
-      'Montant': montant,
-      'Participation': participation,
-      'ActivitesDu': activitesDu?.toIso8601String(),
-      'ActiviteAu': activiteAu?.toIso8601String(),
+      'id_facture': idFacture,
+      'date_op': dateOp.toIso8601String(),
+      'dossier_id': dossierID,
+      'contact_id': contactID,
+      'titre': titre,
+      'libelle': libelle,
+      'conditions': conditions,
+      'contenu': contenu,
+      'montant_facture': facturable,
+      'montant_total': montant,
+      'participation': participation,
+      'activites_du': activitesDu?.toIso8601String(),
+      'activite_au': activiteAu?.toIso8601String(),
     };
   }
 }

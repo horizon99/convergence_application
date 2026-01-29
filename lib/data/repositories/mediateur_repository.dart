@@ -8,7 +8,7 @@ class MediateurRepository {
 
     final result = await db.query(
       'mediateurs',
-      orderBy: 'ID_Mediateur',
+      orderBy: 'id_mediateur ASC',
     );
 
     return result.map((e) => Mediateur.fromMap(e)).toList();

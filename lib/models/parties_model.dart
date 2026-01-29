@@ -6,7 +6,7 @@ class Parties {
   final String? attention;
   final String? role;
   final String? concerne;
-  final int? facturable;
+  final int? participation;
   final String? telFixe;
   final String? telMobile; 
   final String? email;
@@ -22,7 +22,7 @@ class Parties {
     this.attention,
     this.role,
     this.concerne,
-    this.facturable,
+    this.participation,
     this.telFixe,
     this.telMobile,
     this.email,
@@ -30,30 +30,30 @@ class Parties {
 
   factory Parties.fromMap(Map<String, dynamic> map) {
     return Parties(
-      idPartie: map['ID_Partie'] as int,
-      contactId: map['ContactID'] as int,
-      dossierId: map['DossierID'] as int,
-      nomPrenom: map['NomPrenom'] as String,
+      idPartie: map['id_partie'] as int,
+      contactId: map['contact_id'] as int,
+      dossierId: map['dossier_id'] as int,
+      nomPrenom: map['nom_prenom'] as String,
 
-      attention: map['Attention'] as String?,
-      role: map['Role'] as String?,
-      concerne: map['Concerne'] as String?,
-      facturable: map['Facturable'] as int?,
-      telFixe: map['Tel_fixe'] as String?,
-      telMobile: map['Tel_mobile'] as String?,
-      email: map['Email'] as String?,
+      attention: map['attention'] as String?,
+      role: map['role'] as String?,
+      concerne: map['concerne'] as String?,
+      participation: map['participation'] as int?,
+      telFixe: map['tel_fixe'] as String?,
+      telMobile: map['tel_mobile'] as String?,
+      email: map['email'] as String?,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'ID_Partie': idPartie,
-      'ContactID': contactId,
-      'DossierID': dossierId,
-      'Attention': attention,
-      'Role': role,
-      'Concerne': concerne,
-      'Facturable': facturable,
+      'id_partie': idPartie,
+      'contact_id': contactId,
+      'dossier_id': dossierId,
+      'attention': attention,
+      'role': role,
+      'concerne': concerne,
+      'participation': participation,
     };
   }
 }

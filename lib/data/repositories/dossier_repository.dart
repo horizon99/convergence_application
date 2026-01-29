@@ -7,24 +7,24 @@ class DossierRepository {
     final db = await DatabaseHelper.instance.database;
     final result = await db.rawQuery('''
       SELECT 
-        d.ID_Dossier,
-        d.Libelle,
-        d.Tarif,
-        d.Priorite,
-        p.lblPriorite,
-        d.Archive,
-        d.TVA,
-        d.Afaire,
-        d.Date_creation,
-        d.Date_archive,
-        d.No_archive,
-        d.Ref_tribunal,
-        d.Libelle_Client,
-        d.Notes
+        d.id_dossier,
+        d.libelle,
+        d.groupe_tarif,
+        d.priorite_id,
+        p.priorite_text,
+        d.archive,
+        d.tva,
+        d.a_faire,
+        d.date_creation,
+        d.date_archive,
+        d.no_archive,
+        d.ref_tribunal,
+        d.libelle_client,
+        d.notes
       FROM dossiers d
       LEFT JOIN priorite p
-        ON p.ID_Priorite = d.Priorite
-      WHERE d.ID_Dossier = ?
+        ON p.id_priorite = d.priorite_id
+      WHERE d.id_dossier = ?
     ''', [id]);
 
     if (result.isNotEmpty) {
@@ -41,24 +41,24 @@ class DossierRepository {
     //await db.query('dossiers', orderBy: 'Date_creation DESC');
     final List<Map<String, dynamic>> result = await db.rawQuery('''
       SELECT 
-        d.ID_Dossier,
-        d.Libelle,
-        d.Tarif,
-        d.Priorite,
-        p.lblPriorite,
-        d.Archive,
-        d.TVA,
-        d.Afaire,
-        d.Date_creation,
-        d.Date_archive,
-        d.No_archive,
-        d.Ref_tribunal,
-        d.Libelle_Client,
-        d.Notes
+        d.id_dossier,
+        d.libelle,
+        d.groupe_tarif,
+        d.priorite_id,
+        p.priorite_text,
+        d.archive,
+        d.tva,
+        d.a_faire,
+        d.date_creation,
+        d.date_archive,
+        d.no_archive,
+        d.ref_tribunal,
+        d.libelle_client,
+        d.notes
       FROM dossiers d
       LEFT JOIN priorite p
-        ON p.ID_Priorite = d.Priorite
-      ORDER BY d.Priorite ASC
+        ON p.id_priorite = d.priorite_id
+      ORDER BY d.priorite_id ASC
     ''');
     return result.map((e) => Dossier.fromMap(e)).toList();
   }
@@ -69,20 +69,20 @@ class DossierRepository {
     return await db.update(
       'dossiers',
       {
-        'Libelle': dossier.libelle,
-        'Tarif': dossier.tarif,
-        'TVA': dossier.tva,
-        'Priorite': dossier.prioriteId,
-        'Afaire': dossier.afaire,
-        'Ref_tribunal': dossier.refTribunal,
-        'Archive': dossier.archive ? 1 : 0,
-        'Date_archive': dossier.dateArchive?.toIso8601String(),
-        'No_archive': dossier.noArchive,
-        'Date_creation': dossier.dateCreation?.toIso8601String(),
-        'Libelle_Client': dossier.libelleClient,
-        'Notes': dossier.notes,
+        'libelle': dossier.libelle,
+        'groupe_tarif': dossier.groupeTarif,
+        'tva': dossier.tva,
+        'priorite_id': dossier.prioriteId,
+        'a_faire': dossier.afaire,
+        'ref_tribunal': dossier.refTribunal,
+        'archive': dossier.archive ? 1 : 0,
+        'date_archive': dossier.dateArchive?.toIso8601String(),
+        'no_archive': dossier.noArchive,
+        'date_creation': dossier.dateCreation?.toIso8601String(),
+        'libelle_client': dossier.libelleClient,
+        'notes': dossier.notes,
       },
-      where: 'ID_Dossier = ?',
+      where: 'id_dossier = ?',
       whereArgs: [dossier.id],
     );
   }
@@ -93,7 +93,7 @@ Future<int> deleteDossier(int idDossier) async {
 
   return await db.delete(
     'dossiers',
-    where: 'ID_Dossier = ?',
+    where: 'id_dossier = ?',
     whereArgs: [idDossier],
   );
 }
@@ -102,17 +102,17 @@ Future<int> insertDossier(Dossier dossier) async {
   final db = await DatabaseHelper.instance.database;
 
   return await db.insert('dossiers', {
-    'Libelle': dossier.libelle,
-    'Tarif': dossier.tarif,
-    'TVA': dossier.tva,
-    'Priorite': dossier.prioriteId,
-    'Afaire': dossier.afaire,
-    'Ref_tribunal': dossier.refTribunal,
-    'Archive': dossier.archive ? 1 : 0,
-    'Date_archive': dossier.dateArchive?.toIso8601String(),
-    'No_archive': dossier.noArchive,
-    'Date_creation': dossier.dateCreation?.toIso8601String(),
-    'Libelle_Client': dossier.libelleClient,
-    'Notes': dossier.notes,
+    'libelle': dossier.libelle,
+    'groupe_tarif': dossier.groupeTarif,
+    'tva': dossier.tva,
+    'priorite_id': dossier.prioriteId,
+    'a_faire': dossier.afaire,
+    'ref_tribunal': dossier.refTribunal,
+    'archive': dossier.archive ? 1 : 0,
+    'date_archive': dossier.dateArchive?.toIso8601String(),
+    'no_archive': dossier.noArchive,
+    'date_creation': dossier.dateCreation?.toIso8601String(),
+    'libelle_client': dossier.libelleClient,
+    'notes': dossier.notes,
   });
 }

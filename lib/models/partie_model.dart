@@ -2,11 +2,10 @@ class Partie {
   final int? idPartie;
   final int contactId;
   final int dossierId;
-
   final String? attention;
   final String? role;
   final String? concerne;
-  final int? facturable;
+  final int? participation;
 
   Partie({
     this.idPartie,
@@ -15,53 +14,52 @@ class Partie {
     this.attention,
     this.role,
     this.concerne,
-    this.facturable,
+    this.participation,
   });
 
   factory Partie.fromMap(Map<String, dynamic> map) {
     return Partie(
-      idPartie: map['ID_Partie'] as int,
-      contactId: map['ContactID'] as int,
-      dossierId: map['DossierID'] as int,
-
-      attention: map['Attention'] as String?,
-      role: map['Role'] as String?,
-      concerne: map['Concerne'] as String?,
-      facturable: map['Facturable'] as int?,
+      idPartie: map['id_partie'] as int,
+      contactId: map['contact_id'] as int,
+      dossierId: map['dossier_id'] as int,
+      attention: map['attention'] as String?,
+      role: map['role'] as String?,
+      concerne: map['concerne'] as String?,
+      participation: map['participation'] as int?,
     );
   }
 
   Map<String, dynamic> toMap() {
     final map = {
-      'ContactID': contactId,
-      'DossierID': dossierId,
-      'Attention': attention,
-      'Role': role,
-      'Concerne': concerne,
-      'Facturable': facturable,
+      'contact_id': contactId,
+      'dossier_id': dossierId,
+      'attention': attention,
+      'role': role,
+      'concerne': concerne,
+      'participation': participation,
     };
     if (idPartie != null) {
-      map['ID_Partie'] = idPartie;
+      map['id_partie'] = idPartie;
     }
     return map;
   }
 
   Partie copyWith({
-    int? id,
+    int? idPartie,
     int? contactId,
     String? role,
     String? attention,
     String? concerne,
-    int? facturable,
+    int? participation,
   }) {
     return Partie(
-      idPartie: id ?? idPartie,
+      idPartie: idPartie ?? this.idPartie,
       dossierId: dossierId,
       contactId: contactId ?? this.contactId,
       role: role ?? this.role,
       attention: attention ?? this.attention,
       concerne: concerne ?? this.concerne,
-      facturable: facturable ?? this.facturable,
+      participation: participation,
     );
   }
 }

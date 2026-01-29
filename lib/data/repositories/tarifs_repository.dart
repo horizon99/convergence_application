@@ -6,7 +6,7 @@ class TarifsRepository {
   Future<List<ModeleTarif>> getAllTarifs() async {
     final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query('tarifs', orderBy: 'Groupe ASC, Ordre ASC');
+    final result = await db.query('tarifs', orderBy: 'groupe ASC, ordre ASC');
 
     return result.map((e) => ModeleTarif.fromMap(e)).toList();
   }
@@ -17,7 +17,7 @@ class TarifsRepository {
     return await db.update(
       'tarifs',
       tarif.toMap(),
-      where: 'ID_ModeleTarif = ?',
+      where: 'id_tarif = ?',
       whereArgs: [tarif.idTarif]  ,
     );
   }
@@ -33,7 +33,7 @@ class TarifsRepository {
 
     return await db.delete(
       'tarifs',
-      where: 'ID_ModeleTarif = ?',
+      where: 'id_tarif = ?',
       whereArgs: [idTarif],
     );
   }

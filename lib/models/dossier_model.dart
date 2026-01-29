@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class Dossier {
   final int id;
   final String libelle;
-  final int tarif;
   final double? tva;
   final int prioriteId;
   final String prioriteLabel;
@@ -15,12 +14,12 @@ class Dossier {
   final String? refTribunal;
   final String? libelleClient;
   final String? notes;
+  final String? groupeTarif;
 
 
   Dossier({
     required this.id,
     required this.libelle,
-    required this.tarif,
     this.tva,
     required this.prioriteId,
     required this.prioriteLabel,
@@ -32,6 +31,7 @@ class Dossier {
     required this.refTribunal,
     this.libelleClient,
     this.notes,
+    this.groupeTarif,
   });
 
   factory Dossier.fromMap(Map<String, dynamic> map) {
@@ -57,20 +57,20 @@ class Dossier {
     }
 
     return Dossier(
-      id: map['ID_Dossier'],
-      libelle: map['Libelle'],
-      tarif: map['Tarif'],
-      tva: map['TVA'] != null ? double.tryParse(map['TVA'].toString()) : null,
-      prioriteId: map['Priorite'],
-      prioriteLabel: map['lblPriorite'],
-      afaire: map['Afaire'],
-      dateCreation: parseDate(map['Date_creation']),
-      dateArchive: parseDate(map['Date_archive']),
-      noArchive: map['No_archive'],
-      archive: map['Archive'] == 1,
-      refTribunal: map['Ref_tribunal'],
-      libelleClient: map['Libelle_Client'],
-      notes: map['Notes'],
+      id: map['id_dossier'],
+      libelle: map['libelle'],
+      groupeTarif: map['groupe_tarif'],
+      tva: map['tva'] != null ? double.tryParse(map['tva'].toString()) : null,
+      prioriteId: map['priorite_id'],
+      prioriteLabel: map['priorite_text'],
+      afaire: map['a_faire'],
+      dateCreation: parseDate(map['date_creation']),
+      dateArchive: parseDate(map['date_archive']),
+      noArchive: map['no_archive'],
+      archive: map['archive'] == 1,
+      refTribunal: map['ref_tribunal'],
+      libelleClient: map['libelle_client'],
+      notes: map['notes'],
     );
     
   }

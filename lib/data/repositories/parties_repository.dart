@@ -9,21 +9,21 @@ class PartiesRepository {
     final List<Map<String, dynamic>> maps = await db.rawQuery(
       '''
       SELECT 
-        p.ID_Partie,
-        p.ContactID,
-        p.DossierID,
-        p.Attention,
-        p.Role,
-        p.Concerne,
-        p.Facturable,
-        c.Nom || ' ' || IFNULL(c.Prenom, '') AS NomPrenom,
-        c.Tel_fixe,
-        c.Tel_mobile,
-        c.Email
+        p.id_partie,
+        p.contact_id,
+        p.dossier_id,
+        p.attention,
+        p.role,
+        p.concerne,
+        p.participation,
+        c.nom || ' ' || IFNULL(c.prenom, '') AS nom_prenom,
+        c.tel_fixe,
+        c.tel_mobile,
+        c.email
       FROM parties p
-      JOIN contacts c ON c.ID_Contact = p.ContactID
-      WHERE p.DossierID = ?
-      ORDER BY c.Nom, c.Prenom
+      JOIN contacts c ON c.id_contact = p.contact_id
+      WHERE p.dossier_id = ?
+      ORDER BY c.nom, c.prenom
       ''',
       [dossierId],
     );
@@ -36,7 +36,7 @@ class PartiesRepository {
 
   return await db.delete(
     'parties',
-    where: 'ID_Partie = ?',
+    where: 'id_partie = ?',
     whereArgs: [idPartie],
   );
 }
