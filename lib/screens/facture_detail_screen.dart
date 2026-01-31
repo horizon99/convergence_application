@@ -38,7 +38,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
   double _totalHonoraires = 0.0;
   double _totalFrais = 0.0;
   double _grandTotal = 0.0;
-  double _montantParticipation  = 0.0;
+  double _montantParticipation = 0.0;
   bool _loading = true;
   final _participationController = TextEditingController();
 
@@ -74,7 +74,14 @@ class _FacturePrepareState extends State<FacturePrepare> {
     );
     _totalFrais = _contenu.fold(0.0, (sum, c) => sum + (c.totalFrais ?? 0));
     _grandTotal = (_totalHonoraires + _totalFrais);
-    _montantParticipation = ((_participationController.text.isNotEmpty ? double.tryParse(_participationController.text) ?? 100 : 100) * _grandTotal / 10).round() / 10;   
+    _montantParticipation =
+        ((_participationController.text.isNotEmpty
+                    ? double.tryParse(_participationController.text) ?? 100
+                    : 100) *
+                _grandTotal /
+                10)
+            .round() /
+        10;
   }
 
   Future<void> _onClientChanged(int? clientId) async {
@@ -102,12 +109,18 @@ class _FacturePrepareState extends State<FacturePrepare> {
     }
   }
 
-  // Optionally implement editing of FactureContenu if needed
-
   Future<void> _onOk() async {
-    if (_selectedClientId == null) return;
+    if (_selectedClientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur: aucun client sélectionné.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     final facture = Facture(
-      idFacture: 0, // Will be set by DB
+      idFacture: null,
       dateOp: _dateOp,
       dossierID: widget.dossierId,
       contactID: _selectedClientId!,
@@ -117,9 +130,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
       contenu: _serializeContenu(_contenu),
       facturable: _totalHonoraires,
       montant: _grandTotal,
-      participation: _participationController.text.isNotEmpty
-          ? double.tryParse(_participationController.text) ?? 100
-          : 100 ,
+      participation: _montantParticipation,
       activitesDu: widget.dateDu,
       activiteAu: widget.dateAu,
     );
@@ -208,12 +219,10 @@ class _FacturePrepareState extends State<FacturePrepare> {
                       filled: true,
                       fillColor: Colors.yellow[50],
                     ),
-                    onChanged: (v) => setState(
-                      () {
-                        //_participationController.text = (double.tryParse(v) ?? 0).toString();
-                        _calculateTotals();
-                      },
-                    ),
+                    onChanged: (v) => setState(() {
+                      //_participationController.text = (double.tryParse(v) ?? 0).toString();
+                      _calculateTotals();
+                    }),
                   ),
                 ),
               ],
@@ -235,7 +244,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
             const Divider(height: 1, color: Colors.grey),
 
             ///---------------------------------------
-            /// Contenu 
+            /// Contenu
             ///---------------------------------------
             Container(
               margin: const EdgeInsets.only(top: 12),
@@ -243,7 +252,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(4),
                 color: Colors.blue[50],
-              ), 
+              ),
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _contenu.length,
@@ -312,12 +321,15 @@ class _FacturePrepareState extends State<FacturePrepare> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const SizedBox(width: 1),
-                Text('Total honoraires: CHF ${_totalHonoraires.toStringAsFixed(2)}'),
+                Text(
+                  'Total honoraires: CHF ${_totalHonoraires.toStringAsFixed(2)}',
+                ),
                 Text('Total frais: CHF ${_totalFrais.toStringAsFixed(2)}'),
                 Text('Montant total: CHF ${_grandTotal.toStringAsFixed(2)}'),
-                Text('Montant participation: CHF ${_montantParticipation.toStringAsFixed(2)}',
+                Text(
+                  'Montant participation: CHF ${_montantParticipation.toStringAsFixed(2)}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                ),
                 const SizedBox(width: 1),
               ],
             ),
@@ -344,7 +356,10 @@ class _FacturePrepareState extends State<FacturePrepare> {
                   child: const Text('Annuler'),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(onPressed: _onOk, child: const Text('OK')),
+                ElevatedButton(
+                  onPressed: _onOk,
+                  child: const Text('Créer facture'),
+                ),
               ],
             ),
           ],

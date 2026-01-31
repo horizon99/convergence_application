@@ -1,5 +1,5 @@
 import 'package:convergence_application/screens/activites_facturables_dialog.dart';
-import 'package:convergence_application/screens/facture_dialog.dart';
+import 'package:convergence_application/screens/facture_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

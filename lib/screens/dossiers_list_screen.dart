@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../models/dossier_model.dart';
 import 'dossier_detail_screen.dart';
+import 'mediateur_edit_screen.dart';
+import 'facture_list_screen.dart';
 
 class DossiersListScreen extends StatefulWidget {
   const DossiersListScreen({super.key});
@@ -82,6 +84,53 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
             },
           );
         },
+      ),
+      bottomNavigationBar: BottomAppBar(
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              TextButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FactureListScreen()),
+                  );
+                },
+                icon: const Icon(Icons.receipt_long),
+                label: const Text('Factures'),
+              ),
+
+              TextButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Comptabilité non implémentée')),
+                  );
+                },
+                icon: const Icon(Icons.account_balance_wallet),
+                label: const Text('Comptabilité'),
+              ),
+
+              TextButton.icon(
+                onPressed: () async {
+                  final changed = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (_) => const MediateurEditScreen(),
+                    ),
+                  );
+                  if (changed == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Médiateur mis à jour')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.settings),
+                label: const Text('Paramètres'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

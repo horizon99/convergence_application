@@ -11,6 +11,18 @@ class FactureRepository {
     return result.map((e) => Facture.fromMap(e)).toList();
   }
 
+  Future<List<Facture>> getFacturesFromDossier(int dossierId) async {
+    final Database db = await DatabaseHelper.instance.database;
+
+    final result = await db.query(
+      'factures',
+      where: 'dossier_id = ?', 
+      whereArgs: [dossierId],
+    );
+
+    return result.map((e) => Facture.fromMap(e)).toList();
+  }
+
   Future<int> updateFacture(Facture facture) async {
     final db = await DatabaseHelper.instance.database;
 
@@ -25,7 +37,7 @@ class FactureRepository {
   Future<int> insertFacture(Facture facture) async {
     final db = await DatabaseHelper.instance.database;
 
-    return await db.insert('facture', facture.toMap());
+    return await db.insert('factures', facture.toMap());
   }
 
   Future<int> deleteFacture(int idFacture) async {

@@ -42,6 +42,7 @@ dependencies:
   printing: ^5.11.0
   path_provider: ^2.1.5
   open_filex: ^4.7.0
+  file_picker: ^10.3.10
   # syncfusion_flutter_datagrid: ^22.4.48
 
 

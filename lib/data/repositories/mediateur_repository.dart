@@ -24,4 +24,14 @@ class MediateurRepository {
 
     return Mediateur.fromMap(resultFirst);
   } 
+
+  Future<int> updateMediateur(Mediateur mediateur) async {
+    final Database db = await DatabaseHelper.instance.database;
+    return await db.update(
+      'mediateur',
+      mediateur.toMap(),
+      where: 'id_mediateur = ?',
+      whereArgs: [mediateur.idMediateur],
+    );
+  }
 }

@@ -1,5 +1,5 @@
 class Facture {
-  final int idFacture;
+  final int? idFacture;
   final DateTime dateOp;
   final int dossierID;
   final int contactID;
@@ -31,22 +31,22 @@ class Facture {
 
   factory Facture.fromMap(Map<String, dynamic> map) {
     return Facture(
-      idFacture: map['id_facture'],
-      dateOp: DateTime.parse(map['date_op']),
-      dossierID: map['dossier_id'],
-      contactID: map['contact_id'],
-      titre: map['titre'],
-      libelle: map['libelle'],
-      conditions: map['conditions'],
-      contenu: map['contenu'],
-      facturable: map['montant_facture'],
-      montant: map['montant_total'],
-      participation: map['participation'],
+      idFacture: map['id_facture'] as int,
+      dateOp: DateTime.parse(map['date_facture']),
+      dossierID: map['dossier_id'] as int,
+      contactID: map['contact_id'] as int,
+      titre: map['titre'] as String?,
+      libelle: map['libelle'] as String?,
+      conditions: map['conditions'] as String?,
+      contenu: map['contenu'] as String?,
+      montant: map['montant_total'] != null ? (map['montant_total'] as num).toDouble() : 0.0,
+      facturable: map['montant_facture'] != null ? (map['montant_facture'] as num).toDouble() : 0.0,
+      participation: map['participation'] != null ? (map['participation'] as num).toDouble() : 0.0,
       activitesDu: map['activites_du'] != null
           ? DateTime.parse(map['activites_du'])
           : null,
-      activiteAu: map['activite_au'] != null
-          ? DateTime.parse(map['activite_au'])
+      activiteAu: map['activites_au'] != null
+          ? DateTime.parse(map['activites_au'])
           : null,
     );
   }
@@ -54,7 +54,7 @@ class Facture {
   Map<String, dynamic> toMap() {
     return {
       'id_facture': idFacture,
-      'date_op': dateOp.toIso8601String(),
+      'date_facture': dateOp.toIso8601String(),
       'dossier_id': dossierID,
       'contact_id': contactID,
       'titre': titre,
@@ -65,7 +65,7 @@ class Facture {
       'montant_total': montant,
       'participation': participation,
       'activites_du': activitesDu?.toIso8601String(),
-      'activite_au': activiteAu?.toIso8601String(),
+      'activites_au': activiteAu?.toIso8601String(),
     };
   }
 }

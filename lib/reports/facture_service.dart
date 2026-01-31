@@ -30,7 +30,7 @@ class FactureService {
       int dossierId, DateTime dateDu, DateTime dateAu) async {
     final dossier = await DossierRepository().getDossierById(dossierId);
     if (dossier == null) {
-      throw Exception('Dossier not found');
+      throw Exception('Dossier non trouvé');
     }
 
     final mediateur = await MediateurRepository().getMediateur();
@@ -38,12 +38,12 @@ class FactureService {
     final parties = await PartieRepository().getPartieByDossier(dossierId);
     final clientPartie = parties.firstWhere(
       (p) => p.role == 'Client',
-      orElse: () => throw Exception('Client not found for this dossier'),
+      orElse: () => throw Exception('Client non trouvé pour ce dossier'),
     );
 
     final client = await ContactsRepository().getContactById(clientPartie.contactId);
     if (client == null) {
-      throw Exception('Client contact details not found');
+      throw Exception('Détails du contact client non trouvés');
     }
 
     final content = await ActivitesFacturablesRepository()
