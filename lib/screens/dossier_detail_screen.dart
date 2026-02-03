@@ -1,4 +1,5 @@
 import 'package:convergence_application/screens/activites_list_screen.dart';
+import 'package:convergence_application/screens/facture_list_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../models/dossier_model.dart';
@@ -306,22 +307,17 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
             const SizedBox(height: 16),
 
-            ///───────────────────────────────
-            /// Bloc rétractable : notes
-            ///───────────────────────────────
-            Card(
-              elevation: 2,
-              child: ExpansionTile(
-                title: const Text('Notes'),
-                leading: const Icon(Icons.note),
-                childrenPadding: const EdgeInsets.all(10),
-                children: [
-                  TextFormField(
-                    controller: _notesController,
-                    maxLines: 20,
-                    decoration: const InputDecoration(),
-                  ),
-                ],
+            /// ─────────────────────────────
+            /// Ligne 2 : À faire
+            /// ─────────────────────────────
+            TextFormField(
+              controller: _afaireController,
+              maxLines: 1,
+              decoration: const InputDecoration(
+                labelText: 'À faire',
+                border: OutlineInputBorder(),
+                fillColor: Color(0xFFCCCCFF),
+                filled: true,
               ),
             ),
 
@@ -468,23 +464,14 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             /// ─────────────────────────────
-            /// Ligne 2 : À faire
+            /// Saisie des activités liées au dossier
             /// ─────────────────────────────
-            TextFormField(
-              controller: _afaireController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'À faire',
-                border: OutlineInputBorder(),
-                fillColor: Color(0xFFCCCCFF),
-                filled: true,
-              ),
-            ),
+            ActiviteSaisieCard(dossierId: widget.dossier.id),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             /// ─────────────────────────────
             /// Bloc : Intervenants / Parties
@@ -668,18 +655,35 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
 
-            /// ─────────────────────────────
-            /// Saisie des activités liées au dossier
-            /// ─────────────────────────────
-            ActiviteSaisieCard(dossierId: widget.dossier.id),
+            ///───────────────────────────────
+            /// Bloc rétractable : notes
+            ///───────────────────────────────
+            Card(
+              elevation: 2,
+              child: ExpansionTile(
+                title: const Text('Notes'),
+                leading: const Icon(Icons.note),
+                childrenPadding: const EdgeInsets.all(10),
+                children: [
+                  TextFormField(
+                    controller: _notesController,
+                    maxLines: 20,
+                    decoration: const InputDecoration(),
+                  ),
+                ],
+              ),
+            ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
+
             // Suite du formulaire...
           ],
         ),
       ),
+
+
 
       /// ─────────────────────────────
       /// Barre du bas avec boutons
@@ -710,7 +714,14 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               // Bouton pour les factures
               TextButton.icon(
                 onPressed: () {
-                  // écran Factures
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FactureListScreen(
+                        dossierId: widget.dossier.id,
+                      ),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.receipt_long),
                 label: const Text('Factures'),

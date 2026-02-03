@@ -363,7 +363,7 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
                   );
                 },
                 icon: const Icon(Icons.receipt),
-                label: const Text('Facture'),
+                label: const Text('Créer facture'),
               ),
               const SizedBox(width: 8),
               TextButton.icon(

@@ -7,9 +7,11 @@ class Facture {
   final String? libelle;
   final String? conditions;
   final String? contenu;
-  final double? facturable;
-  final double? montant;
+  final double? honoraires;
   final double? participation;
+  final int? tauxParticipation;
+  final double? frais;
+  final double? total;
   final DateTime? activitesDu;
   final DateTime? activiteAu;
 
@@ -22,8 +24,10 @@ class Facture {
     this.libelle,
     this.conditions,
     this.contenu,
-    this.facturable,
-    this.montant,
+    this.honoraires,
+    this.tauxParticipation,
+    this.frais,
+    this.total,
     this.participation,
     this.activitesDu,
     this.activiteAu,
@@ -39,9 +43,11 @@ class Facture {
       libelle: map['libelle'] as String?,
       conditions: map['conditions'] as String?,
       contenu: map['contenu'] as String?,
-      montant: map['montant_total'] != null ? (map['montant_total'] as num).toDouble() : 0.0,
-      facturable: map['montant_facture'] != null ? (map['montant_facture'] as num).toDouble() : 0.0,
-      participation: map['participation'] != null ? (map['participation'] as num).toDouble() : 0.0,
+      honoraires: map['montant_honoraires'] != null ? (map['montant_honoraires'] as num).toDouble() : 0.0,
+      frais: map['montant_frais'] != null ? (map['montant_frais'] as num).toDouble() : 0.0,
+      total: map['montant_total'] != null ? (map['montant_total'] as num).toDouble() : 0.0,
+      participation: map['montant_participation'] != null ? (map['montant_participation'] as num).toDouble() : 0.0,
+      tauxParticipation: map['taux_participation'] as int?,
       activitesDu: map['activites_du'] != null
           ? DateTime.parse(map['activites_du'])
           : null,
@@ -61,9 +67,11 @@ class Facture {
       'libelle': libelle,
       'conditions': conditions,
       'contenu': contenu,
-      'montant_facture': facturable,
-      'montant_total': montant,
-      'participation': participation,
+      'montant_honoraires': honoraires,
+      'montant_frais': frais,
+      'montant_total': total,
+      'montant_participation': participation,
+      'taux_participation': tauxParticipation,
       'activites_du': activitesDu?.toIso8601String(),
       'activites_au': activiteAu?.toIso8601String(),
     };

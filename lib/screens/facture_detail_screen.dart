@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/facture_model.dart';
 import '../models/facture_contenu_model.dart';
 import '../models/parties_model.dart';
+import '../data/repositories/mediateur_repository.dart';
 import '../data/repositories/parties_repository.dart';
 import '../data/repositories/activites_facturables_repository.dart';
 import '../data/repositories/facture_repository.dart';
@@ -14,11 +15,13 @@ class FacturePrepare extends StatefulWidget {
   final int dossierId;
   final DateTime dateDu;
   final DateTime dateAu;
+  final Facture? facture;
   const FacturePrepare({
     super.key,
     required this.dossierId,
     required this.dateDu,
     required this.dateAu,
+    this.facture,
   });
 
   @override
@@ -41,7 +44,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
   double _montantParticipation = 0.0;
   bool _loading = true;
   final _participationController = TextEditingController();
-
+  
   @override
   void initState() {
     super.initState();
@@ -58,13 +61,31 @@ class _FacturePrepareState extends State<FacturePrepare> {
           dateDu: widget.dateDu,
           dateAu: widget.dateAu,
         );
+    final mediateur = await MediateurRepository().getMediateur();
     setState(() {
       _clients = clients.where((p) => p.role == 'Client').toList();
       _contenu = contenu;
       _calculateTotals();
       _participationController.text = '100';
+      _libelle = mediateur.factureLibelle ?? 'Test libellé';
+      _conditions = mediateur.factureConditions ?? 'Test conditions';
       _loading = false;
     });
+
+    // If we are editing an existing facture, populate fields
+    if (widget.facture != null) {
+      final f = widget.facture!;
+      setState(() {
+        _dateOp = f.dateOp;
+        _selectedClientId = f.contactID;
+        _titre = f.titre ?? _titre;
+        _libelle = f.libelle ?? _libelle;
+        _conditions = f.conditions ?? _conditions;
+        _participationController.text = (f.tauxParticipation ?? 100).toString();
+        _contenu = _deserializeContenu(f.contenu);
+        _calculateTotals();
+      });
+    }
   }
 
   void _calculateTotals() {
@@ -120,7 +141,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
       return;
     }
     final facture = Facture(
-      idFacture: null,
+      idFacture: widget.facture?.idFacture,
       dateOp: _dateOp,
       dossierID: widget.dossierId,
       contactID: _selectedClientId!,
@@ -128,13 +149,19 @@ class _FacturePrepareState extends State<FacturePrepare> {
       libelle: _libelle,
       conditions: _conditions,
       contenu: _serializeContenu(_contenu),
-      facturable: _totalHonoraires,
-      montant: _grandTotal,
+      honoraires: _totalHonoraires,
+      frais: _totalFrais,
+      total: _grandTotal,
       participation: _montantParticipation,
+      tauxParticipation: int.tryParse(_participationController.text) ?? 100,
       activitesDu: widget.dateDu,
       activiteAu: widget.dateAu,
     );
-    await FactureRepository().insertFacture(facture);
+    if (widget.facture == null) {
+      await FactureRepository().insertFacture(facture);
+    } else {
+      await FactureRepository().updateFacture(facture);
+    }
     Navigator.of(context).pop(facture);
   }
 
@@ -144,7 +171,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
       return const Center(child: CircularProgressIndicator());
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Préparer la facture')),
+      appBar: AppBar(title: Text(widget.facture == null ? 'Préparer la facture' : 'Éditer la facture')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -232,6 +259,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
             // Libellé (sur la même colonne)
             TextFormField(
               initialValue: _libelle,
+              maxLines: 2,
               decoration: InputDecoration(
                 labelText: 'Libellé',
                 filled: true,
@@ -338,6 +366,8 @@ class _FacturePrepareState extends State<FacturePrepare> {
             // Conditions (sur la même colonne)
             TextFormField(
               initialValue: _conditions,
+              maxLines: 2,
+              scrollController: ScrollController(),
               decoration: InputDecoration(
                 labelText: 'Conditions',
                 filled: true,
@@ -358,7 +388,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _onOk,
-                  child: const Text('Créer facture'),
+                  child: Text(widget.facture == null ? 'Créer facture' : 'Enregistrer'),
                 ),
               ],
             ),
@@ -375,6 +405,7 @@ String _serializeContenu(List<FactureContenu> list) {
         .map(
           (c) => {
             'codeTarif': c.codeTarif,
+            'texteFacture': c.texteFacture,
             'montantTarif': c.montantTarif,
             'ordreTarif': c.ordreTarif,
             'totalMinutes': c.totalMinutes,
@@ -384,4 +415,24 @@ String _serializeContenu(List<FactureContenu> list) {
         )
         .toList(),
   );
+}
+
+List<FactureContenu> _deserializeContenu(String? jsonStr) {
+  if (jsonStr == null || jsonStr.isEmpty) return [];
+  try {
+    final data = jsonDecode(jsonStr) as List<dynamic>;
+    return data.map((e) {
+      return FactureContenu(
+        codeTarif: e['codeTarif']?.toString(),
+        texteFacture: e['texteFacture']?.toString(),
+        montantTarif: e['montantTarif'] != null ? (e['montantTarif'] as num).toDouble() : null,
+        ordreTarif: e['ordreTarif'] != null ? (e['ordreTarif'] as num).toInt() : null,
+        totalMinutes: e['totalMinutes'] != null ? (e['totalMinutes'] as num).toInt() : null,
+        totalFrais: e['totalFrais'] != null ? (e['totalFrais'] as num).toDouble() : null,
+        totalHonoraires: e['totalHonoraires'] != null ? (e['totalHonoraires'] as num).toDouble() : null,
+      );
+    }).toList();
+  } catch (_) {
+    return [];
+  }
 }

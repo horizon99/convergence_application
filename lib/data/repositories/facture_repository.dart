@@ -23,6 +23,20 @@ class FactureRepository {
     return result.map((e) => Facture.fromMap(e)).toList();
   }
 
+  Future<Facture?> getFactureById(int idFacture) async {
+    final Database db = await DatabaseHelper.instance.database;
+
+    final result = await db.query(
+      'factures',
+      where: 'id_facture = ?',
+      whereArgs: [idFacture],
+      limit: 1,
+    );
+
+    if (result.isEmpty) return null;
+    return Facture.fromMap(result.first);
+  }
+
   Future<int> updateFacture(Facture facture) async {
     final db = await DatabaseHelper.instance.database;
 
