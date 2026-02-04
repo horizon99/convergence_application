@@ -43,8 +43,9 @@ class _FacturePrepareState extends State<FacturePrepare> {
   double _grandTotal = 0.0;
   double _montantParticipation = 0.0;
   bool _loading = true;
+  bool? _paye = false;
   final _participationController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
@@ -67,8 +68,10 @@ class _FacturePrepareState extends State<FacturePrepare> {
       _contenu = contenu;
       _calculateTotals();
       _participationController.text = '100';
-      _libelle = mediateur.factureLibelle ?? 'Test libellé';
-      _conditions = mediateur.factureConditions ?? 'Test conditions';
+      _libelle =
+          mediateur.factureLibelle ??
+          'Je me permets de vous facturer mes honoraires comme suit:';
+      _conditions = mediateur.factureConditions ?? 'Avec mes remerciements.';
       _loading = false;
     });
 
@@ -83,6 +86,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
         _conditions = f.conditions ?? _conditions;
         _participationController.text = (f.tauxParticipation ?? 100).toString();
         _contenu = _deserializeContenu(f.contenu);
+        _paye = f.paye;
         _calculateTotals();
       });
     }
@@ -156,6 +160,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
       tauxParticipation: int.tryParse(_participationController.text) ?? 100,
       activitesDu: widget.dateDu,
       activiteAu: widget.dateAu,
+      paye: _paye ?? false,
     );
     if (widget.facture == null) {
       await FactureRepository().insertFacture(facture);
@@ -171,7 +176,11 @@ class _FacturePrepareState extends State<FacturePrepare> {
       return const Center(child: CircularProgressIndicator());
     }
     return Scaffold(
-      appBar: AppBar(title: Text(widget.facture == null ? 'Préparer la facture' : 'Éditer la facture')),
+      appBar: AppBar(
+        title: Text(
+          widget.facture == null ? 'Créer une facture' : 'Éditer la facture',
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -188,7 +197,7 @@ class _FacturePrepareState extends State<FacturePrepare> {
                         ),
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Date de la facture',
+                            labelText: 'Date de facturation',
                             filled: true,
                             fillColor: Colors.yellow[50],
                           ),
@@ -206,6 +215,18 @@ class _FacturePrepareState extends State<FacturePrepare> {
                       fillColor: Colors.yellow[50],
                     ),
                     onChanged: (v) => setState(() => _titre = v),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: CheckboxListTile(
+                    value: _paye,
+                    title: const Text('Payé'),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (widget.facture == null
+                        ? null
+                        : (v) { setState(() { _paye = v; }); }),
+                        enabled: (widget.facture == null) ? false : true,
                   ),
                 ),
               ],
@@ -388,7 +409,9 @@ class _FacturePrepareState extends State<FacturePrepare> {
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _onOk,
-                  child: Text(widget.facture == null ? 'Créer facture' : 'Enregistrer'),
+                  child: Text(
+                    widget.facture == null ? 'Créer facture' : 'Enregistrer',
+                  ),
                 ),
               ],
             ),
@@ -425,11 +448,21 @@ List<FactureContenu> _deserializeContenu(String? jsonStr) {
       return FactureContenu(
         codeTarif: e['codeTarif']?.toString(),
         texteFacture: e['texteFacture']?.toString(),
-        montantTarif: e['montantTarif'] != null ? (e['montantTarif'] as num).toDouble() : null,
-        ordreTarif: e['ordreTarif'] != null ? (e['ordreTarif'] as num).toInt() : null,
-        totalMinutes: e['totalMinutes'] != null ? (e['totalMinutes'] as num).toInt() : null,
-        totalFrais: e['totalFrais'] != null ? (e['totalFrais'] as num).toDouble() : null,
-        totalHonoraires: e['totalHonoraires'] != null ? (e['totalHonoraires'] as num).toDouble() : null,
+        montantTarif: e['montantTarif'] != null
+            ? (e['montantTarif'] as num).toDouble()
+            : null,
+        ordreTarif: e['ordreTarif'] != null
+            ? (e['ordreTarif'] as num).toInt()
+            : null,
+        totalMinutes: e['totalMinutes'] != null
+            ? (e['totalMinutes'] as num).toInt()
+            : null,
+        totalFrais: e['totalFrais'] != null
+            ? (e['totalFrais'] as num).toDouble()
+            : null,
+        totalHonoraires: e['totalHonoraires'] != null
+            ? (e['totalHonoraires'] as num).toDouble()
+            : null,
       );
     }).toList();
   } catch (_) {

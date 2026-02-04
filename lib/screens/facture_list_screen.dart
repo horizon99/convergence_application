@@ -96,17 +96,18 @@ class _FactureListScreenState extends State<FactureListScreen> {
                   DataColumn(label: Text('Date')),
                   DataColumn(label: Text('Client')),
                   DataColumn(label: Text('Activités')),
-                  DataColumn(label: Text('Montant total')),
                   DataColumn(label: Text('Montant facturé')),
+                  DataColumn(label: Text('Payé')),
                   DataColumn(label: SizedBox.shrink()),
                 ],
                 rows: _rows.map((r) {
                   final f = r.facture;
                   return DataRow(
+                    //color: (f.paye ? WidgetStateProperty.all(Colors.green[50]) : WidgetStateProperty.all(Colors.yellow[50])),
                     cells: [
                       DataCell(
                         IconButton(
-                          icon: const Icon(Icons.picture_as_pdf, size: 18),
+                          icon: const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
                           tooltip: 'Ouvrir le PDF',
                           onPressed: () async {
                             if (f.idFacture == null) {
@@ -141,8 +142,13 @@ class _FactureListScreenState extends State<FactureListScreen> {
                           '${_fmtDate(f.activitesDu)} - ${_fmtDate(f.activiteAu)}',
                         ),
                       ),
-                      DataCell(Text('CHF ${_fmtDouble(f.total)}')),
                       DataCell(Text('CHF ${_fmtDouble(f.participation)}')),
+                      DataCell(Text(
+                        f.paye == true ? 'Oui' : 'Non',
+                        style: TextStyle(
+                          color: f.paye == true ? Colors.green : Colors.orange,
+                        ),
+                        )),
                       DataCell(
                         Row(
                           mainAxisSize: MainAxisSize.min,

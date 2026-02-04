@@ -14,12 +14,14 @@ class Facture {
   final double? total;
   final DateTime? activitesDu;
   final DateTime? activiteAu;
+  final bool paye;
 
   Facture({
     required this.idFacture,
     required this.dateOp,
     required this.dossierID,
     required this.contactID,
+    required this.paye,
     this.titre,
     this.libelle,
     this.conditions,
@@ -48,6 +50,7 @@ class Facture {
       total: map['montant_total'] != null ? (map['montant_total'] as num).toDouble() : 0.0,
       participation: map['montant_participation'] != null ? (map['montant_participation'] as num).toDouble() : 0.0,
       tauxParticipation: map['taux_participation'] as int?,
+      paye: map['paye'] == 1,
       activitesDu: map['activites_du'] != null
           ? DateTime.parse(map['activites_du'])
           : null,
@@ -72,6 +75,7 @@ class Facture {
       'montant_total': total,
       'montant_participation': participation,
       'taux_participation': tauxParticipation,
+      'paye': paye ? 1 : 0,
       'activites_du': activitesDu?.toIso8601String(),
       'activites_au': activiteAu?.toIso8601String(),
     };
