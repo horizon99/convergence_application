@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import '../models/dossier_model.dart';
 import '../models/priorite_model.dart';
 import '../models/parties_model.dart';
+import '../models/tarifs_model.dart';
 import '../data/repositories/priorite_repository.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../data/repositories/parties_repository.dart';
+import '../data/repositories/tarifs_repository.dart';
 import '../app_helper.dart';
 import 'parties_edit_screen.dart';
 import '../widgets/activite_saisie_card.dart';
@@ -25,6 +27,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   final PrioriteRepository prioriteRepository = PrioriteRepository();
   final DossierRepository dossierRepository = DossierRepository();
   final PartiesRepository partiesRepository = PartiesRepository();
+  final TarifsRepository tarifsRepository = TarifsRepository();
 
   Color prioriteColorFromLabel(String label) {
     switch (label.toLowerCase()) {
@@ -46,9 +49,12 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   late int _selectedPrioriteId;
   late Future<List<Priorite>> _prioritesFuture;
   late Future<List<Parties>> _partiesFuture;
+  late bool _isNew;
+  late Future<List<ModeleTarif>> _tarifsFuture;
+  String? _selectedGroupeTarif;
 
   late TextEditingController _libelleController;
-  late TextEditingController _tarifController;
+  late TextEditingController _groupeTarifController;
   late TextEditingController _tvaController;
   late TextEditingController _afaireController;
   late TextEditingController _refTribController;
@@ -63,11 +69,9 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     final v = s.trim();
     if (v.isEmpty) return null;
 
-    // Try ISO first
     final iso = DateTime.tryParse(v);
     if (iso != null) return iso;
 
-    // Try common local formats: dd.MM.yyyy or dd/MM/yyyy or dd-MM-yyyy
     final parts = v.split(RegExp(r'[.\-\/]'));
     if (parts.length >= 3) {
       final d = int.tryParse(parts[0]);
@@ -78,7 +82,6 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
     return null;
   }
-
   @override
   void initState() {
     super.initState();
@@ -91,18 +94,22 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
       return '$dd.$mm.$yyyy';
     }
 
+    _isNew = widget.dossier.id == 0;
+
     _selectedPrioriteId = widget.dossier.prioriteId;
     _prioritesFuture = prioriteRepository.getAllPriorites();
-    _partiesFuture = partiesRepository.getPartiesByDossier(widget.dossier.id);
-    _libelleController = TextEditingController(text: widget.dossier.libelle);
-    _notesController = TextEditingController(
-      text: widget.dossier.notes ?? '',
+    _partiesFuture = partiesRepository.getPartiesByDossier(
+      widget.dossier.id ?? 0,
     );
+    _tarifsFuture = tarifsRepository.getAllTarifs();
+    _selectedGroupeTarif = widget.dossier.groupeTarif;
+    _groupeTarifController = TextEditingController(
+      text: widget.dossier.groupeTarif ?? '',
+    );
+    _libelleController = TextEditingController(text: widget.dossier.libelle);
+    _notesController = TextEditingController(text: widget.dossier.notes ?? '');
     _libelleClientController = TextEditingController(
       text: widget.dossier.libelleClient ?? '',
-    );
-    _tarifController = TextEditingController(
-      text: widget.dossier.groupeTarif ?? '',
     );
     _tvaController = TextEditingController(
       text: widget.dossier.tva?.toString() ?? '',
@@ -113,8 +120,12 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     _refTribController = TextEditingController(
       text: widget.dossier.refTribunal ?? '',
     );
+    // Si création, mettre la date du jour par défaut
+    final initialCreationDate = _isNew
+        ? DateTime.now()
+        : widget.dossier.dateCreation;
     _dateCreationController = TextEditingController(
-      text: formatDate(widget.dossier.dateCreation),
+      text: formatDate(initialCreationDate),
     );
     _dateArchiveController = TextEditingController(
       text: formatDate(widget.dossier.dateArchive),
@@ -127,14 +138,15 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
 
   void _refreshParties() {
     setState(() {
-      _partiesFuture = partiesRepository.getPartiesByDossier(widget.dossier.id);
+      _partiesFuture = partiesRepository.getPartiesByDossier(
+        widget.dossier.id ?? 0,
+      );
     });
   }
 
   @override
   void dispose() {
     _libelleController.dispose();
-    _tarifController.dispose();
     _tvaController.dispose();
     _afaireController.dispose();
     _refTribController.dispose();
@@ -142,7 +154,8 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
     _dateCreationController.dispose();
     _dateArchiveController.dispose();
     _libelleClientController.dispose();
-    _notesController.dispose(); 
+    _notesController.dispose();
+    _groupeTarifController.dispose();
     super.dispose();
   }
 
@@ -169,9 +182,13 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                 final updated = Dossier(
                   id: widget.dossier.id,
                   libelle: _libelleController.text.trim(),
-                  groupeTarif: _tarifController.text.trim().isEmpty
+                  groupeTarif:
+                      _selectedGroupeTarif == null ||
+                          _selectedGroupeTarif!.trim().isEmpty
                       ? null
-                      : _tarifController.text.trim(),
+                      : _groupeTarifController.text.trim().isEmpty
+                          ? null
+                          : _groupeTarifController.text.trim(),
                   tva: _tvaController.text.trim().isEmpty
                       ? null
                       : double.tryParse(_tvaController.text.trim()),
@@ -197,21 +214,58 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                       : _notesController.text.trim(),
                 );
 
-                final rows = await dossierRepository.updateDossier(updated);
+                if (_isNew) {
+                  final insertedId = await insertDossier(updated);
 
-                if (!mounted) return;
+                  if (!mounted) return;
 
-                if (rows > 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Dossier enregistré')),
-                  );
-                  Navigator.pop(context, updated);
+                  if (insertedId > 0) {
+                    final created = Dossier(
+                      id: insertedId,
+                      libelle: updated.libelle,
+                      tva: updated.tva,
+                      prioriteId: updated.prioriteId,
+                      prioriteLabel: updated.prioriteLabel,
+                      afaire: updated.afaire,
+                      dateCreation: updated.dateCreation,
+                      dateArchive: updated.dateArchive,
+                      noArchive: updated.noArchive,
+                      archive: updated.archive,
+                      refTribunal: updated.refTribunal,
+                      libelleClient: updated.libelleClient,
+                      notes: updated.notes,
+                      groupeTarif: updated.groupeTarif,
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Dossier créé')),
+                    );
+
+                    Navigator.pop(context, created);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Erreur: aucun enregistrement effectué'),
+                      ),
+                    );
+                  }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erreur: aucun enregistrement effectué'),
-                    ),
-                  );
+                  final rows = await dossierRepository.updateDossier(updated);
+
+                  if (!mounted) return;
+
+                  if (rows > 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Dossier enregistré')),
+                    );
+                    Navigator.pop(context, updated);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Erreur: aucun enregistrement effectué'),
+                      ),
+                    );
+                  }
                 }
               },
               icon: const Icon(Icons.save),
@@ -331,6 +385,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
               child: ExpansionTile(
                 title: const Text('Informations complémentaires'),
                 leading: const Icon(Icons.add),
+                initiallyExpanded: _isNew,
                 childrenPadding: const EdgeInsets.all(10),
                 children: [
                   Column(
@@ -380,14 +435,60 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextFormField(
-                              controller: _tarifController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Tarif',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
+                            child: FutureBuilder<List<ModeleTarif>>(
+                              future: _tarifsFuture,
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const SizedBox(
+                                    height: 56,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+
+                                final tarifs = snapshot.data!;
+                                final groups = <String>[];
+                                for (final t in tarifs) {
+                                  if (!groups.contains(t.groupeTarif)) {
+                                    groups.add(t.groupeTarif);
+                                  }
+                                }
+
+                                try {
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: _selectedGroupeTarif,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Groupe de tarif',
+                                      border: OutlineInputBorder(),
+                                      isDense: false,
+                                    ),
+                                    items: groups
+                                        .map(
+                                          (g) => DropdownMenuItem(
+                                            value: g,
+                                            child: Text(g),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _selectedGroupeTarif = v;
+                                      });
+                                    },
+                                  );
+                                } catch (e) {
+                                  // si erreur, on laisse le champ libre pour saisir un groupe tarif manuellement
+                                  return TextFormField(
+                                    controller: _groupeTarifController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Groupe de tarif',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -399,7 +500,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                                     decimal: true,
                                   ),
                               decoration: const InputDecoration(
-                                labelText: 'TVA',
+                                labelText: 'Taux de TVA (%)',
                                 border: OutlineInputBorder(),
                                 isDense: true,
                               ),
@@ -469,7 +570,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
             /// ─────────────────────────────
             /// Saisie des activités liées au dossier
             /// ─────────────────────────────
-            ActiviteSaisieCard(dossierId: widget.dossier.id),
+            if (!_isNew) ActiviteSaisieCard(dossierId: widget.dossier.id ?? 0),
 
             const SizedBox(height: 10),
 
@@ -504,7 +605,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => PartieEditScreen(
-                                        dossierId: widget.dossier.id,
+                                        dossierId: widget.dossier.id ?? 0,
                                       ),
                                     ),
                                   );
@@ -590,7 +691,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                                       .push(
                                         MaterialPageRoute(
                                           builder: (_) => PartieEditScreen(
-                                            dossierId: widget.dossier.id,
+                                            dossierId: widget.dossier.id ?? 0,
                                             idPartie: partie.idPartie,
                                           ),
                                         ),
@@ -683,8 +784,6 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
         ),
       ),
 
-
-
       /// ─────────────────────────────
       /// Barre du bas avec boutons
       /// ─────────────────────────────
@@ -701,7 +800,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => ListActivitesScreen(
-                        dossierId: widget.dossier.id,
+                        dossierId: widget.dossier.id ?? 0,
                         dossierLibelleClient: widget.dossier.libelle,
                       ),
                     ),
@@ -717,9 +816,8 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => FactureListScreen(
-                        dossierId: widget.dossier.id,
-                      ),
+                      builder: (_) =>
+                          FactureListScreen(dossierId: widget.dossier.id),
                     ),
                   );
                 },

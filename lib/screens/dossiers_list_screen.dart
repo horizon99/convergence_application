@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../models/dossier_model.dart';
 import 'dossier_detail_screen.dart';
-import 'mediateur_edit_screen.dart';
+import 'parametres_list_screen.dart';
 import 'facture_list_screen.dart';
 
 class DossiersListScreen extends StatefulWidget {
@@ -29,7 +29,45 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dossiers en cours')),
+      appBar: AppBar(
+        title: const Text('Dossiers en cours'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Ajouter',
+            onPressed: () async {
+              final newDossier = await Navigator.of(context).push<Dossier>(
+                MaterialPageRoute(
+                  builder: (_) => DossierDetailScreen(
+                    dossier: Dossier(
+                      id: 0,
+                      libelle: '',
+                      tva: null,
+                      prioriteId: 0,
+                      prioriteLabel: '',
+                      afaire: null,
+                      dateCreation: null,
+                      dateArchive: null,
+                      noArchive: null,
+                      archive: false,
+                      refTribunal: '',
+                      libelleClient: null,
+                      notes: null,
+                      groupeTarif: null,
+                    ),
+                  ),
+                ),
+              );
+
+              if (newDossier != null) {
+                setState(() {
+                  _loadDossiers();
+                });
+              }
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Dossier>>(
         future: _dossiersFuture,
         builder: (context, snapshot) {
@@ -114,16 +152,9 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
 
               TextButton.icon(
                 onPressed: () async {
-                  final changed = await Navigator.of(context).push<bool>(
-                    MaterialPageRoute(
-                      builder: (_) => const MediateurEditScreen(),
-                    ),
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ParametresListScreen()),
                   );
-                  if (changed == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Médiateur mis à jour')),
-                    );
-                  }
                 },
                 icon: const Icon(Icons.settings),
                 label: const Text('Paramètres'),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Dossier {
-  final int id;
+  final int? id;
   final String libelle;
   final double? tva;
   final int prioriteId;
