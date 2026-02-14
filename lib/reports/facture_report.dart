@@ -1,17 +1,14 @@
-import 'dart:io';
 import '../../reports/facture_service.dart';
 import '../app_helper.dart';
 import '../data/repositories/facture_repository.dart';
 import '../models/facture_model.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class FactureReport {
-  Future<void> generate(int idFacture) async {
+  Future<pw.Document> generate(int idFacture) async {
     final invoiceData = await FactureService().getInvoiceDataFromFacture(
       idFacture,
     );
@@ -37,13 +34,14 @@ class FactureReport {
       ),
     );
 
-    final output = await getTemporaryDirectory();
-    final file = File(
-      '${output.path}/FA_${invoiceData.client.nomPrenom}_${idFacture.toString()}.pdf',
-    );
-    await file.writeAsBytes(await pdf.save());
+    //final output = await getTemporaryDirectory();
+    //final file = File(
+    //  '${output.path}/FA_${invoiceData.client.nomPrenom}_${idFacture.toString()}.pdf',
+    //);
+    //await file.writeAsBytes(await pdf.save());
 
-    OpenFilex.open(file.path);
+    //OpenFilex.open(file.path);
+    return pdf;
   }
 
   pw.Widget _buildHeader(InvoiceData data, pw.ImageProvider? logo) {
@@ -294,7 +292,7 @@ class FactureReport {
               ),
               pw.Text(
                 NumberFormat.currency(
-                  symbol: 'CHF',
+                  symbol: 'CHF ',
                 ).format(factureRecord.total),
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
@@ -317,7 +315,7 @@ class FactureReport {
               ),
               pw.Text(
                 NumberFormat.currency(
-                  symbol: 'CHF',
+                  symbol: 'CHF ',
                 ).format(factureRecord.participation),
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,

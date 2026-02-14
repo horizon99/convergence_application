@@ -1,3 +1,4 @@
+import 'package:convergence_application/screens/facture_print_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -7,7 +8,6 @@ import '../data/repositories/parties_repository.dart';
 import '../models/facture_model.dart';
 import '../models/dossier_model.dart';
 import '../models/parties_model.dart';
-import '../reports/facture_report.dart';
 import 'package:convergence_application/screens/facture_detail_screen.dart';
 
 class FactureListScreen extends StatefulWidget {
@@ -38,12 +38,12 @@ class _FactureListScreenState extends State<FactureListScreen> {
 
     for (final f in factures) {
       Dossier? dossier;
-      String dossierLibelle = '';
+      String dossierLibelleClient = '';
       String clientNom = '';
 
       try {
         dossier = await DossierRepository().getDossierById(f.dossierID);
-        dossierLibelle = dossier?.libelle ?? '';
+        dossierLibelleClient = dossier?.libelleClient ?? '';
       } catch (_) {}
 
       try {
@@ -61,7 +61,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
       rows.add(
         _FactureRow(
           facture: f,
-          dossierLibelle: dossierLibelle,
+          dossierLibelle: dossierLibelleClient,
           clientNom: clientNom,
         ),
       );
@@ -107,8 +107,12 @@ class _FactureListScreenState extends State<FactureListScreen> {
                     cells: [
                       DataCell(
                         IconButton(
-                          icon: const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
-                          tooltip: 'Ouvrir le PDF',
+                          icon: const Icon(
+                            Icons.picture_as_pdf,
+                            size: 18,
+                            color: Colors.red,
+                          ),
+                          tooltip: 'GénérerPDF',
                           onPressed: () async {
                             if (f.idFacture == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +122,21 @@ class _FactureListScreenState extends State<FactureListScreen> {
                               );
                               return;
                             }
-                            await FactureReport().generate(f.idFacture!);
+                            showDialog(
+                              context: context,
+                              builder: (context) => FacturePrintDialog(
+                                idFacture: f.idFacture!,
+                                dateDu: f.activitesDu ?? f.dateOp,
+                                dateAu: f.activiteAu ?? f.dateOp,
+                                idDossier: f.dossierID,
+                                dossierLibelle: r.dossierLibelle.isNotEmpty  
+                                    ? r.dossierLibelle
+                                    : 'Dossier ${f.dossierID}',
+                                montantFacture: f.participation ?? 0.0,
+                              ),
+                            );
+
+                            //await FactureReport().generate(f.idFacture!);
                           },
                         ),
                       ),
@@ -143,12 +161,16 @@ class _FactureListScreenState extends State<FactureListScreen> {
                         ),
                       ),
                       DataCell(Text('CHF ${_fmtDouble(f.participation)}')),
-                      DataCell(Text(
-                        f.paye == true ? 'Oui' : 'Non',
-                        style: TextStyle(
-                          color: f.paye == true ? Colors.green : Colors.orange,
+                      DataCell(
+                        Text(
+                          f.paye == true ? 'Oui' : 'Non',
+                          style: TextStyle(
+                            color: f.paye == true
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
                         ),
-                        )),
+                      ),
                       DataCell(
                         Row(
                           mainAxisSize: MainAxisSize.min,
