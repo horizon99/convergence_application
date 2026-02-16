@@ -65,23 +65,6 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
   late TextEditingController _notesController;
   late bool _archive;
 
-  DateTime? parseDateString(String s) {
-    final v = s.trim();
-    if (v.isEmpty) return null;
-
-    final iso = DateTime.tryParse(v);
-    if (iso != null) return iso;
-
-    final parts = v.split(RegExp(r'[.\-\/]'));
-    if (parts.length >= 3) {
-      final d = int.tryParse(parts[0]);
-      final m = int.tryParse(parts[1]);
-      final y = int.tryParse(parts[2]);
-      if (d != null && m != null && y != null) return DateTime(y, m, d);
-    }
-
-    return null;
-  }
   @override
   void initState() {
     super.initState();
@@ -197,8 +180,8 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                   afaire: _afaireController.text.trim().isEmpty
                       ? null
                       : _afaireController.text.trim(),
-                  dateCreation: parseDateString(_dateCreationController.text),
-                  dateArchive: parseDateString(_dateArchiveController.text),
+                  dateCreation: AppHelper.parseDateString(_dateCreationController.text),
+                  dateArchive: AppHelper.parseDateString(_dateArchiveController.text),
                   noArchive: _noArchiveController.text.trim().isEmpty
                       ? null
                       : int.tryParse(_noArchiveController.text.trim()),
@@ -215,11 +198,12 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                 );
 
                 if (_isNew) {
-                  final insertedId = await insertDossier(updated);
+                  try {
+                    final insertedId = await insertDossier(updated);
 
-                  if (!mounted) return;
+                    if (!mounted) return;
 
-                  if (insertedId > 0) {
+                    if (insertedId > 0) {
                     final created = Dossier(
                       id: insertedId,
                       libelle: updated.libelle,
@@ -249,21 +233,34 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                       ),
                     );
                   }
-                } else {
-                  final rows = await dossierRepository.updateDossier(updated);
-
-                  if (!mounted) return;
-
-                  if (rows > 0) {
+                  } on Exception catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Dossier enregistré')),
+                      SnackBar(content: Text(e.toString())),
                     );
-                    Navigator.pop(context, updated);
-                  } else {
+                  }
+                } else {
+                  try {
+                    final rows = await dossierRepository.updateDossier(updated);
+
+                    if (!mounted) return;
+
+                    if (rows > 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Dossier enregistré')),
+                      );
+                      Navigator.pop(context, updated);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Erreur: aucun enregistrement effectué'),
+                        ),
+                      );
+                    }
+                  } on Exception catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Erreur: aucun enregistrement effectué'),
-                      ),
+                      SnackBar(content: Text(e.toString())),
                     );
                   }
                 }
@@ -474,6 +471,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                                     onChanged: (v) {
                                       setState(() {
                                         _selectedGroupeTarif = v;
+                                        _groupeTarifController.text = v ?? '';
                                       });
                                     },
                                   );
@@ -664,7 +662,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                                   cursor: SystemMouseCursors.click,
                                   child: GestureDetector(
                                     onTap: () =>
-                                        AppHelper.launchEmail(partie.email!),
+                                        AppHelper.launchEmail(address: partie.email!),
                                     child: Text(
                                       partie.email!,
                                       style: const TextStyle(

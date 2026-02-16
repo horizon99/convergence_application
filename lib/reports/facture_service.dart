@@ -1,4 +1,10 @@
 import 'dart:convert';
+import 'dart:developer' as console;
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
 
 import '../../models/activites_facturables_model.dart';
 import '../../models/contacts_model.dart';
@@ -11,6 +17,10 @@ import '../data/repositories/dossier_repository.dart';
 import '../data/repositories/facture_repository.dart';
 import '../data/repositories/mediateur_repository.dart';
 import '../data/repositories/partie_repository.dart';
+import '../reports/facture_report.dart';
+import '../reports/activites_facturables_report.dart';
+import '../reports/qr_bill_generator.dart';
+import '../reports/qr_bill.dart';
 
 class InvoiceData {
   final Dossier dossier;
@@ -34,7 +44,10 @@ class InvoiceData {
 
 class FactureService {
   Future<InvoiceData> getInvoiceData(
-      int dossierId, DateTime dateDu, DateTime dateAu) async {
+    int dossierId,
+    DateTime dateDu,
+    DateTime dateAu,
+  ) async {
     final dossier = await DossierRepository().getDossierById(dossierId);
     if (dossier == null) {
       throw Exception('Dossier non trouvé');
@@ -48,7 +61,9 @@ class FactureService {
       orElse: () => throw Exception('Client non trouvé pour ce dossier'),
     );
 
-    final client = await ContactsRepository().getContactById(clientPartie.contactId);
+    final client = await ContactsRepository().getContactById(
+      clientPartie.contactId,
+    );
     if (client == null) {
       throw Exception('Détails du contact client non trouvés');
     }
@@ -80,7 +95,9 @@ class FactureService {
     final mediateur = await MediateurRepository().getMediateur();
 
     final client = await ContactsRepository().getContactById(facture.contactID);
-    if (client == null) throw Exception('Détails du contact client non trouvés');
+    if (client == null) {
+      throw Exception('Détails du contact client non trouvés');
+    }
 
     List<FactureContenu> content = [];
     if (facture.contenu != null && facture.contenu!.isNotEmpty) {
@@ -90,11 +107,21 @@ class FactureService {
           return FactureContenu(
             codeTarif: e['codeTarif']?.toString(),
             texteFacture: e['texteFacture']?.toString(),
-            montantTarif: (e['montantTarif'] != null) ? (e['montantTarif'] as num).toDouble() : null,
-            ordreTarif: e['ordreTarif'] != null ? (e['ordreTarif'] as num).toInt() : null,
-            totalMinutes: e['totalMinutes'] != null ? (e['totalMinutes'] as num).toInt() : null,
-            totalFrais: (e['totalFrais'] != null) ? (e['totalFrais'] as num).toDouble() : null,
-            totalHonoraires: (e['totalHonoraires'] != null) ? (e['totalHonoraires'] as num).toDouble() : null,
+            montantTarif: (e['montantTarif'] != null)
+                ? (e['montantTarif'] as num).toDouble()
+                : null,
+            ordreTarif: e['ordreTarif'] != null
+                ? (e['ordreTarif'] as num).toInt()
+                : null,
+            totalMinutes: e['totalMinutes'] != null
+                ? (e['totalMinutes'] as num).toInt()
+                : null,
+            totalFrais: (e['totalFrais'] != null)
+                ? (e['totalFrais'] as num).toDouble()
+                : null,
+            totalHonoraires: (e['totalHonoraires'] != null)
+                ? (e['totalHonoraires'] as num).toDouble()
+                : null,
           );
         }).toList();
       } catch (_) {
@@ -103,15 +130,22 @@ class FactureService {
     } else {
       // fallback: build content from activities if activitesDu/Au present
       if (facture.activitesDu != null && facture.activiteAu != null) {
-        content = await ActivitesFacturablesRepository()
-            .getMontantsFacturables(facture.dossierID, dateDu: facture.activitesDu, dateAu: facture.activiteAu);
+        content = await ActivitesFacturablesRepository().getMontantsFacturables(
+          facture.dossierID,
+          dateDu: facture.activitesDu,
+          dateAu: facture.activiteAu,
+        );
       }
     }
 
     List<ActiviteFacturable> activities = [];
     if (facture.activitesDu != null && facture.activiteAu != null) {
       activities = await ActivitesFacturablesRepository()
-          .getActivitesFacturables(facture.dossierID, dateDu: facture.activitesDu, dateAu: facture.activiteAu);
+          .getActivitesFacturables(
+            facture.dossierID,
+            dateDu: facture.activitesDu,
+            dateAu: facture.activiteAu,
+          );
     }
 
     return InvoiceData(
@@ -123,5 +157,213 @@ class FactureService {
       dateDu: facture.activitesDu,
       dateAu: facture.activiteAu,
     );
+  }
+
+  Future<void> generateFacturePDF(Map<String, Object> map, {
+    required int idFacture,
+    required bool afficherFacture,
+    required bool afficherQrCode,
+    required bool afficherReleveActivites,
+    required bool afficherFrais,
+    required bool afficherMontants,
+    required double montantFacture,
+    required List<ActiviteFacturable> activites,
+    required DateTime dateDu,
+    required DateTime dateAu,
+    required int idDossier,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    String dossierLibelle = 'Dossier $idDossier'; // TODO
+
+    // Generate selected PDFs
+    console.log('Début de la génération de la facture');
+
+    late final dynamic pwFacture;
+    pwFacture = await FactureReport().generate(idFacture);
+    final bytesFacture = await pwFacture.save();
+    final docFacture = sf.PdfDocument(inputBytes: bytesFacture);
+
+    console.log('Début de la génération de la part QR code');
+
+    late final dynamic pwQrCode;
+    late final dynamic bytesQrCode;
+    late final dynamic docQrCode;
+    if (afficherQrCode) {
+      final invoiceData = await FactureService().getInvoiceDataFromFacture(
+        idFacture,
+      );
+      pwQrCode = await generateQRBill(invoiceData, montantFacture);
+      bytesQrCode = pwQrCode;
+      docQrCode = sf.PdfDocument(inputBytes: bytesQrCode);
+    } else {
+      pwQrCode = null;
+      bytesQrCode = null;
+      docQrCode = null;
+    }
+
+    console.log('Début de la génération du relevé d\'activités');
+
+    late final dynamic pwReleve;
+    late final dynamic bytesReleve;
+    late final dynamic docReleve;
+    if (afficherReleveActivites) {
+      pwReleve = await ActivitesFacturablesReport().buildReleveActivitesPdf(
+        activites: activites,
+        dateDu: dateDu,
+        dateAu: dateAu,
+        dossierLibelle: dossierLibelle,
+        afficherFrais: afficherFrais,
+        afficherMontants: afficherMontants,
+      );
+      bytesReleve = await pwReleve.save();
+      docReleve = sf.PdfDocument(inputBytes: bytesReleve);
+    } else {
+      pwReleve = null;
+      bytesReleve = null;
+      docReleve = null;
+    }
+
+    console.log(
+      'Les documents PDF ont été générés. Facture: ${pwFacture != null}, Relevé: ${pwReleve != null}',
+    );
+
+    late final result = sf.PdfDocument();
+    sf.PdfSection? section;
+
+    console.log(
+      'PDF fusionné généré : ${result.pages.count} pages avant fusion',
+    );
+
+    // Copy pages from first document using templates
+    if (afficherFacture) {
+      for (int i = 0; i < docFacture.pages.count; i++) {
+        final sf.PdfTemplate template = docFacture.pages[i].createTemplate();
+        if (section == null || section.pageSettings.size != template.size) {
+          section = result.sections!.add();
+          section.pageSettings.size = template.size;
+          section.pageSettings.margins.all = 0;
+        }
+
+        section.pages.add().graphics.drawPdfTemplate(
+          template,
+          const Offset(0, 0),
+        );
+      }
+      docFacture.dispose();
+      // Copy pages from third document (QR code)
+      if (afficherQrCode) {
+        final sf.PdfTemplate template = docQrCode.pages[0].createTemplate();
+        if (section == null || section.pageSettings.size != template.size) {
+          section = result.sections!.add();
+          section.pageSettings.size = template.size;
+          section.pageSettings.margins.all = 0;
+        }
+
+        section.pages[0].graphics.drawPdfTemplate(
+          template,
+          const Offset(0, 520),
+        );
+        docQrCode.dispose();
+      }
+    }
+
+    // Copy pages from second document
+    if (afficherReleveActivites) {
+      for (int i = 0; i < docReleve.pages.count; i++) {
+        final sf.PdfTemplate template = docReleve.pages[i].createTemplate();
+        if (section == null || section.pageSettings.size != template.size) {
+          section = result.sections!.add();
+          section.pageSettings.size = template.size;
+          section.pageSettings.margins.all = 0;
+        }
+
+        section.pages.add().graphics.drawPdfTemplate(
+          template,
+          const Offset(0, 0),
+        );
+      }
+      docReleve.dispose();
+    }
+
+    final mergedBytes = await result.save();
+
+    result.dispose();
+
+    final directory = await getApplicationDocumentsDirectory();
+    final fileName =
+        'FA_${idDossier.toString()}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final file = File('${directory.path}/$fileName');
+    await file.writeAsBytes(mergedBytes);
+    await OpenFilex.open(file.path);
+    mergedBytes.clear();
+    console.log('PDF fusionné généré : ${file.path}');
+
+    //if (_preparerEmail) {
+    //final invoiceData = await FactureService().getInvoiceDataFromFacture(widget.idFacture);
+    //if (invoiceData.client.email == null || invoiceData.client.email!.isEmpty) {
+    //  console.log('Aucune adresse e-mail trouvée pour le client. Impossible de préparer le courriel.');
+    //  return;
+    //}
+    //AppHelper.launchEmail(
+    //    address: invoiceData.client.email ?? '',
+    //    subject: widget.dossierLibelle,
+    //    body: 'Je me permets de vous transmettre ci-joint ma facture relative aux récentes activités. N’hésitez pas à me contacter si vous avez des questions ou besoin de précisions supplémentaires.',
+    //    attachmentPath: file.path);
+    //}
+    return;
+  }
+
+  Future<Uint8List?> generateQRBill(
+    InvoiceData invoiceData,
+    double montantFacture,
+  ) async {
+    // Fonts must be loaded to display properly in test outputs
+    final regularFont = File('assets/fonts/OpenSans-Regular.ttf')
+        .readAsBytes()
+        .then((bytes) => ByteData.view(Uint8List.fromList(bytes).buffer));
+    final boldFont = File('assets/fonts/OpenSans-Bold.ttf').readAsBytes().then(
+      (bytes) => ByteData.view(Uint8List.fromList(bytes).buffer),
+    );
+
+    final fontLoader = FontLoader('OpenSans')
+      ..addFont(regularFont)
+      ..addFont(boldFont);
+    await fontLoader.load();
+
+    QRBill qrBill = QRBill();
+    qrBill.setVersion(2.00);
+    qrBill.setQrType("SPC");
+    qrBill.setIBAN(invoiceData.mediateur.iban);
+    qrBill.setActor(
+      typeId: QRBill.actorCR,
+      addressType: QRBill.addTypeStructured,
+      name: invoiceData.mediateur.nom,
+      address1: invoiceData.mediateur.factureAdresse,
+      address2: invoiceData.mediateur.factureNoRue,
+      postalcode: invoiceData.mediateur.factureNoPostal,
+      location: invoiceData.mediateur.factureLocalite,
+      country: "CH",
+    );
+    qrBill.setActor(
+      typeId: QRBill.actorUDR,
+      addressType: QRBill.addTypeStructured,
+      name: invoiceData.client.nomPrenom,
+      address1: invoiceData.client.adresse,
+      address2: invoiceData.client.noRue,
+      postalcode: invoiceData.client.noPostal,
+      location: invoiceData.client.localite,
+      country: "CH",
+    );
+    qrBill.setAmount(montantFacture);
+    qrBill.setReference(QRBill.refTypeNON);
+    qrBill.setAdditionalInfo("test");
+    //bool isValid = qrBill.isValid();
+    //console.log('QR Bill is valid: $isValid');
+
+    BillGenerator bg = BillGenerator(language: BillGenerator.french);
+    Uint8List? bill = await bg.generateInvoice(qrBill);
+    //expect(bill == null, false);
+    return bill;
   }
 }

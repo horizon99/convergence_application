@@ -36,12 +36,19 @@ class BillGenerator {
       fontWeight: FontWeight.normal);
 
   static const _width = 1000.0;
-  static const _height = 575.0;
-  static const _margin = 20.0;
+  static const _height = 500.0;
+  static const _margin = 10.0;
   static const _qrRatio = 0.2;
-  static const _panelRatio = 0.4;
+  static const _panelRatio = 0.3;
   static const _majorGap = 10.0;
   static const _minorGap = 0.0;
+  // static const _width = 1000.0;
+  // static const _height = 575.0;
+  // static const _margin = 20.0;
+  // static const _qrRatio = 0.2;
+  // static const _panelRatio = 0.4;
+  // static const _majorGap = 10.0;
+  // static const _minorGap = 0.0;
 
   BillGenerator({this.language = english});
 
@@ -167,7 +174,7 @@ class BillGenerator {
     return validBills == 0 ? null : await pdf.save();
   }
 
-  _drawBorders(Canvas c, double t, double l, double w, double h,
+  void _drawBorders(Canvas c, double t, double l, double w, double h,
       [bool complete = true]) {
     _drawDashedLine(c, Offset(l, t), Offset(w, t));
     if (complete) {
@@ -189,7 +196,7 @@ class BillGenerator {
         ),
       );
       textPainter.layout();
-      textPainter.paint(c, const Offset(10.0, 10.0));
+      textPainter.paint(c, const Offset(10.0, 0.0));
 
       c.save();
       c.translate(w * _panelRatio - 10, h - 10);
@@ -448,7 +455,7 @@ class BillGenerator {
     } else {
       _drawText(c,
           offset: secondLine + const Offset(90.0, 0.0),
-          text: qrBill.getAmount().toString(),
+          text: qrBill.getAmount()!.toStringAsFixed(2),
           style: styleDefault,
           rhc: rhc,
           bottomPadding: _majorGap);

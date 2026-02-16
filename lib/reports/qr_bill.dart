@@ -1,5 +1,3 @@
-library qr_bill;
-
 class QRBill {
   String? _qrType;
   double? _version;
@@ -422,6 +420,7 @@ class QRBill {
     }
   }
 
+  // ignore: strict_top_level_inference
   bool setVersion(var version) {
     if (version is String) {
       if (version.length != 4) {
@@ -466,7 +465,9 @@ class QRBill {
     iban = iban.replaceAll(" ", "").trim();
     for (int i = 0; i < iban.length; i++) {
       if (!"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-          .contains(iban[i].toUpperCase())) return false;
+          .contains(iban[i].toUpperCase())) {
+        return false;
+      }
     }
     iban = _validateStr(iban, true, 21);
     if (iban == null) {
@@ -921,19 +922,31 @@ class QRBill {
           switch (_actors[typeId].addressType) {
             case addTypeStructured:
               if (_actors[typeId].address1 == null ||
-                  _actors[typeId].address1!.isEmpty) valid = false;
+                  _actors[typeId].address1!.isEmpty) {
+                valid = false;
+              }
               if (_actors[typeId].postcode == null ||
-                  _actors[typeId].postcode!.isEmpty) valid = false;
+                  _actors[typeId].postcode!.isEmpty) {
+                valid = false;
+              }
               if (_actors[typeId].location == null ||
-                  _actors[typeId].location!.isEmpty) valid = false;
+                  _actors[typeId].location!.isEmpty) {
+                valid = false;
+              }
               if (_actors[typeId].country == null ||
-                  _actors[typeId].country!.isEmpty) valid = false;
+                  _actors[typeId].country!.isEmpty) {
+                valid = false;
+              }
               break;
             case addTypeCombined:
               if (_actors[typeId].address1 == null ||
-                  _actors[typeId].address1!.isEmpty) valid = false;
+                  _actors[typeId].address1!.isEmpty) {
+                valid = false;
+              }
               if (_actors[typeId].address2 == null ||
-                  _actors[typeId].address2!.isEmpty) valid = false;
+                  _actors[typeId].address2!.isEmpty) {
+                valid = false;
+              }
               break;
             default:
               valid = false;
@@ -941,9 +954,13 @@ class QRBill {
         }
       } else {
         if (_actors[typeId].postcode == null ||
-            _actors[typeId].postcode!.isEmpty) valid = false;
+            _actors[typeId].postcode!.isEmpty) {
+          valid = false;
+        }
         if (_actors[typeId].location == null ||
-            _actors[typeId].location!.isEmpty) valid = false;
+            _actors[typeId].location!.isEmpty) {
+          valid = false;
+        }
         if (_actors[typeId].country == null ||
             _actors[typeId].country!.isEmpty) {
           valid = false;

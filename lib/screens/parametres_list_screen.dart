@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'mediateur_edit_screen.dart';
 import 'tarif_edit_screen.dart';
+import 'comptes_list_screen.dart';
 
 class ParametresListScreen extends StatelessWidget {
   const ParametresListScreen({super.key});
@@ -39,6 +40,16 @@ class ParametresListScreen extends StatelessWidget {
             },
             icon: const Icon(Icons.price_check),
             label: const Text('Tarifs'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ComptesListScreen()),
+              );
+            },
+            icon: const Icon(Icons.account_balance),
+            label: const Text('Comptes'),
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(

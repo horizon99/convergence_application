@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../data/repositories/facture_repository.dart';
+import '../data/repositories/activites_facturables_repository.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../data/repositories/parties_repository.dart';
 import '../models/facture_model.dart';
 import '../models/dossier_model.dart';
 import '../models/parties_model.dart';
-import 'package:convergence_application/screens/facture_detail_screen.dart';
+import '../reports/facture_service.dart';
+import 'facture_detail_screen.dart';
 
 class FactureListScreen extends StatefulWidget {
   final int? dossierId;
@@ -122,21 +124,36 @@ class _FactureListScreenState extends State<FactureListScreen> {
                               );
                               return;
                             }
-                            showDialog(
+
+                            final res = await showDialog<FacturePrintResult?>(
                               context: context,
-                              builder: (context) => FacturePrintDialog(
+                              builder: (context) => FacturePrintDialog(),
+                            );
+
+                            if (res != null && res.generated) {
+                              final activites = await ActivitesFacturablesRepository()
+                                  .getActivitesFacturables(
+                                f.dossierID,
+                                dateDu: f.activitesDu ?? f.dateOp,
+                                dateAu: f.activiteAu ?? f.dateOp,
+                              );
+
+                              await FactureService().generateFacturePDF(
+                                {},
                                 idFacture: f.idFacture!,
+                                afficherFacture: res.afficherFacture,
+                                afficherQrCode: res.afficherQrCode,
+                                afficherReleveActivites:
+                                    res.afficherReleveActivites,
+                                afficherFrais: res.afficherFrais,
+                                afficherMontants: res.afficherMontants,
+                                montantFacture: f.participation ?? 0.0,
+                                activites: activites,
                                 dateDu: f.activitesDu ?? f.dateOp,
                                 dateAu: f.activiteAu ?? f.dateOp,
                                 idDossier: f.dossierID,
-                                dossierLibelle: r.dossierLibelle.isNotEmpty  
-                                    ? r.dossierLibelle
-                                    : 'Dossier ${f.dossierID}',
-                                montantFacture: f.participation ?? 0.0,
-                              ),
-                            );
-
-                            //await FactureReport().generate(f.idFacture!);
+                              );
+                            }
                           },
                         ),
                       ),

@@ -10,6 +10,8 @@ import '../data/repositories/parties_repository.dart';
 import '../data/repositories/activites_facturables_repository.dart';
 import '../data/repositories/facture_repository.dart';
 import '../app_helper.dart';
+import 'facture_print_dialog.dart';
+import '../reports/facture_service.dart';
 
 class FacturePrepare extends StatefulWidget {
   final int dossierId;
@@ -162,12 +164,58 @@ class _FacturePrepareState extends State<FacturePrepare> {
       activiteAu: widget.dateAu,
       paye: _paye ?? false,
     );
+    int? idInserted = facture.idFacture;
     if (widget.facture == null) {
-      await FactureRepository().insertFacture(facture);
+      // Show print options dialog before saving
+      final res = await showDialog<FacturePrintResult?>(
+        context: context,
+        builder: (context) => FacturePrintDialog(),
+      );
+
+      // If user confirmed, insert record and generate PDF
+      if (res != null && res.generated) {
+        // Save facture to get an ID for PDF generation
+        idInserted = await FactureRepository().insertFacture(facture);
+
+        // Fetch activities again to ensure we have the latest data for PDF
+        final activites = await ActivitesFacturablesRepository()
+            .getActivitesFacturables(
+              facture.dossierID,
+              dateDu: facture.activitesDu ?? facture.dateOp,
+              dateAu: facture.activiteAu ?? facture.dateOp,
+            );
+
+        // Generate PDF with the specified options
+        if (res.afficherFacture == true || res.afficherReleveActivites == true) {
+          await FactureService().generateFacturePDF(
+            {},
+            idFacture: idInserted,
+            afficherFacture: res.afficherFacture,
+            afficherQrCode: res.afficherQrCode,
+            afficherReleveActivites: res.afficherReleveActivites,
+            afficherFrais: res.afficherFrais,
+            afficherMontants: res.afficherMontants,
+            montantFacture: facture.participation ?? 0.0,
+            activites: activites,
+            dateDu: facture.activitesDu ?? facture.dateOp,
+            dateAu: facture.activiteAu ?? facture.dateOp,
+            idDossier: facture.dossierID,
+          );
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Facture générée avec succès!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      if (!mounted) return;
     } else {
       await FactureRepository().updateFacture(facture);
+      Navigator.of(context).pop(true);
     }
-    Navigator.of(context).pop(facture);
+    if (!mounted) return;
   }
 
   @override
@@ -225,8 +273,12 @@ class _FacturePrepareState extends State<FacturePrepare> {
                     controlAffinity: ListTileControlAffinity.leading,
                     onChanged: (widget.facture == null
                         ? null
-                        : (v) { setState(() { _paye = v; }); }),
-                        enabled: (widget.facture == null) ? false : true,
+                        : (v) {
+                            setState(() {
+                              _paye = v;
+                            });
+                          }),
+                    enabled: (widget.facture == null) ? false : true,
                   ),
                 ),
               ],

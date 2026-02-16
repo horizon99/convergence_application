@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../models/dossier_model.dart';
 import 'dossier_detail_screen.dart';
+import 'archives_list_screen.dart';
 import 'parametres_list_screen.dart';
+import 'ecritures_list_screen.dart';
 import 'facture_list_screen.dart';
 
 class DossiersListScreen extends StatefulWidget {
@@ -103,7 +105,7 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
                   ),
                   backgroundColor: dossier.prioriteColor,
                 ),
-                title: Text(dossier.libelle),
+                title: Text('${dossier.id} - ${dossier.libelle}'),
                 subtitle: Text('A faire: ${dossier.afaire}'),
                 onTap: () async {
                   final updatedDossier = await Navigator.of(context).push<Dossier>(
@@ -141,9 +143,19 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
               ),
 
               TextButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Comptabilité non implémentée')),
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ArchivesListScreen()),
+                  );
+                },
+                icon: const Icon(Icons.archive),
+                label: const Text('Archives'),
+              ),
+
+              TextButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const EcritureesListScreen()),
                   );
                 },
                 icon: const Icon(Icons.account_balance_wallet),
