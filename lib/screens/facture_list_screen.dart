@@ -34,8 +34,11 @@ class _FactureListScreenState extends State<FactureListScreen> {
   Future<void> _loadRows() async {
     setState(() => _loading = true);
     final factures = widget.dossierId == null
-        ? await FactureRepository().getAllFactures()
-        : await FactureRepository().getFacturesFromDossier(widget.dossierId!);
+        ? await FactureRepository().getAllFacturesAndPayments()
+        : await FactureRepository().getFacturesAndPaymentsDossier(
+            widget.dossierId!,
+          );
+
     final List<_FactureRow> rows = [];
 
     for (final f in factures) {
@@ -44,16 +47,16 @@ class _FactureListScreenState extends State<FactureListScreen> {
       String clientNom = '';
 
       try {
-        dossier = await DossierRepository().getDossierById(f.dossierID);
+        dossier = await DossierRepository().getDossierById(f.idDossier);
         dossierLibelleClient = dossier?.libelleClient ?? '';
       } catch (_) {}
 
       try {
         final parties = await PartiesRepository().getPartiesByDossier(
-          f.dossierID,
+          f.idDossier,
         );
         final p = parties.firstWhere(
-          (p) => p.contactId == f.contactID,
+          (p) => p.contactId == f.idContact,
           orElse: () =>
               Parties(idPartie: 0, contactId: 0, dossierId: 0, nomPrenom: ''),
         );
@@ -94,13 +97,16 @@ class _FactureListScreenState extends State<FactureListScreen> {
               child: DataTable(
                 columns: const [
                   DataColumn(label: SizedBox.shrink()),
-                  DataColumn(label: Text('Dossier')),
+                  //DataColumn(label: Text('No Dossier')),
                   DataColumn(label: Text('Date')),
-                  DataColumn(label: Text('Client')),
+                  DataColumn(label: Text('Dossier/Client')),
                   DataColumn(label: Text('Activités')),
                   DataColumn(label: Text('Montant facturé')),
+                  DataColumn(label: Text('Montant encaissé')),
+                  DataColumn(label: Text('Solde restant')),
                   DataColumn(label: Text('Payé')),
                   DataColumn(label: SizedBox.shrink()),
+                  //DataColumn(label: SizedBox.shrink()),
                 ],
                 rows: _rows.map((r) {
                   final f = r.facture;
@@ -116,68 +122,54 @@ class _FactureListScreenState extends State<FactureListScreen> {
                           ),
                           tooltip: 'GénérerPDF',
                           onPressed: () async {
-                            if (f.idFacture == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Facture introuvable'),
-                                ),
-                              );
-                              return;
-                            }
-
                             final res = await showDialog<FacturePrintResult?>(
                               context: context,
                               builder: (context) => FacturePrintDialog(),
                             );
 
                             if (res != null && res.generated) {
-                              final activites = await ActivitesFacturablesRepository()
-                                  .getActivitesFacturables(
-                                f.dossierID,
-                                dateDu: f.activitesDu ?? f.dateOp,
-                                dateAu: f.activiteAu ?? f.dateOp,
-                              );
+                              final activites =
+                                  await ActivitesFacturablesRepository()
+                                      .getActivitesFacturables(
+                                        f.idDossier,
+                                        dateDu: f.activitesDu ?? f.dateOp,
+                                        dateAu: f.activitesAu ?? f.dateOp,
+                                      );
 
                               await FactureService().generateFacturePDF(
                                 {},
-                                idFacture: f.idFacture!,
+                                idFacture: f.idFacture,
                                 afficherFacture: res.afficherFacture,
                                 afficherQrCode: res.afficherQrCode,
                                 afficherReleveActivites:
                                     res.afficherReleveActivites,
                                 afficherFrais: res.afficherFrais,
                                 afficherMontants: res.afficherMontants,
-                                montantFacture: f.participation ?? 0.0,
+                                montantFacture: f.montantFacture,
                                 activites: activites,
                                 dateDu: f.activitesDu ?? f.dateOp,
-                                dateAu: f.activiteAu ?? f.dateOp,
-                                idDossier: f.dossierID,
+                                dateAu: f.activitesAu ?? f.dateOp,
+                                idDossier: f.idDossier,
                               );
                             }
                           },
                         ),
                       ),
-                      DataCell(
-                        Text(
-                          r.dossierLibelle.isNotEmpty
-                              ? r.dossierLibelle
-                              : 'Dossier ${f.dossierID}',
-                        ),
-                      ),
+                      //DataCell(Text(f.idDossier.toString())
                       DataCell(Text(DateFormat('dd.MM.yyyy').format(f.dateOp))),
                       DataCell(
                         Text(
-                          r.clientNom.isNotEmpty
-                              ? r.clientNom
-                              : f.contactID.toString(),
+                          '${f.idDossier} - ${r.clientNom.isNotEmpty ? r.clientNom : f.idContact.toString()}',
                         ),
                       ),
                       DataCell(
                         Text(
-                          '${_fmtDate(f.activitesDu)} - ${_fmtDate(f.activiteAu)}',
+                          '${_fmtDate(f.activitesDu)} - ${_fmtDate(f.activitesAu)}',
                         ),
                       ),
-                      DataCell(Text('CHF ${_fmtDouble(f.participation)}')),
+                      DataCell(Text('CHF ${_fmtDouble(f.montantFacture)}')),
+                      DataCell(Text('CHF ${_fmtDouble(f.montantEncaisse)}')),
+                      DataCell(Text('CHF ${_fmtDouble(f.soldeRestant)}')),
                       DataCell(
                         Text(
                           f.paye == true ? 'Oui' : 'Non',
@@ -195,30 +187,28 @@ class _FactureListScreenState extends State<FactureListScreen> {
                             IconButton(
                               icon: const Icon(Icons.edit, size: 18),
                               tooltip: 'Éditer la facture',
-                              onPressed: f.idFacture == null
-                                  ? null
-                                  : () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => FacturePrepare(
-                                            dossierId: f.dossierID,
-                                            dateDu: f.activitesDu ?? f.dateOp,
-                                            dateAu: f.activiteAu ?? f.dateOp,
-                                            facture: f,
-                                          ),
-                                        ),
-                                      );
-                                      await _loadRows();
-                                    },
+                              onPressed: () async {
+                                final fact = await FactureRepository()
+                                    .getFactureById(f.idFacture);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FacturePrepare(
+                                      dossierId: f.idDossier,
+                                      dateDu: f.activitesDu ?? f.dateOp,
+                                      dateAu: f.activitesAu ?? f.dateOp,
+                                      facture: fact,
+                                    ),
+                                  ),
+                                );
+                                await _loadRows();
+                              },
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline),
                               color: Colors.red,
                               tooltip: 'Supprimer la facture',
-                              onPressed: f.idFacture == null
-                                  ? null
-                                  : () => _confirmDelete(f),
+                              onPressed: () => _confirmDelete(f),
                             ),
                           ],
                         ),
@@ -235,7 +225,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
     );
   }
 
-  Future<void> _confirmDelete(Facture f) async {
+  Future<void> _confirmDelete(FacturePaiement f) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -262,13 +252,11 @@ class _FactureListScreenState extends State<FactureListScreen> {
     );
 
     if (confirmed == true) {
-      if (f.idFacture != null) {
-        await FactureRepository().deleteFacture(f.idFacture!);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Facture supprimée')));
-        await _loadRows();
-      }
+      await FactureRepository().deleteFacture(f.idFacture);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Facture supprimée')));
+      await _loadRows();
     }
   }
 
@@ -284,7 +272,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
 }
 
 class _FactureRow {
-  final Facture facture;
+  final FacturePaiement facture;
   final String dossierLibelle;
   final String clientNom;
 

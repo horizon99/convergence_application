@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../data/repositories/ecritures_repository.dart';
 import '../data/repositories/comptes_repository.dart';
+import '../data/repositories/facture_repository.dart';
+import '../widgets/ecriture_saisie_card.dart';
 import '../models/ecriture_model.dart';
 import '../models/compte_model.dart';
 import '../app_helper.dart';
@@ -17,7 +18,15 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
   final EcrituresRepository _repo = EcrituresRepository();
   final ComptesRepository _comptesRepo = ComptesRepository();
   List<Ecriture> _items = [];
+  List<Ecriture> _allItems = [];
   Map<int, String> _compteLabels = {};
+  List<Compte> _charges = [];
+  List<Compte> _actifs = [];
+  List<int> _years = [];
+
+  int? _selectedYear;
+  int? _selectedChargeId;
+  int? _selectedActifId;
   bool _loading = true;
 
   @override
@@ -29,13 +38,42 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final items = await _repo.getAll();
+    // load comptes lists for filters
+    final charges = await _comptesRepo.getAllComptesChargesProduits();
+    final actifs = await _comptesRepo.getAllComptesActifsPassifs();
     // load comptes labels
     final comptes = await _comptesRepo.getAllComptes();
     _compteLabels = {for (var c in comptes) (c.idCompte ?? 0): c.libelle};
     if (!mounted) return;
+    // compute years
+    final yearsSet = <int>{};
+    for (var e in items) {
+      yearsSet.add(e.date.year);
+    }
+    final years = yearsSet.toList()..sort((b, a) => a.compareTo(b));
+
     setState(() {
+      _allItems = items;
       _items = items;
+      _charges = charges;
+      _actifs = actifs;
+      _years = years;
+      // reset filters
+      _selectedYear = null;
+      _selectedChargeId = null;
+      _selectedActifId = null;
       _loading = false;
+    });
+  }
+
+  void _applyFilter() {
+    var filtered = _allItems;
+    if (_selectedYear != null) filtered = filtered.where((e) => e.date.year == _selectedYear).toList();
+    if (_selectedChargeId != null) filtered = filtered.where((e) => e.compteChargeProduitId == _selectedChargeId).toList();
+    if (_selectedActifId != null) filtered = filtered.where((e) => e.compteActifPassifId == _selectedActifId).toList();
+
+    setState(() {
+      _items = filtered;
     });
   }
 
@@ -67,6 +105,8 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
     final comptesRepo = ComptesRepository();
     final charges = await comptesRepo.getAllComptesChargesProduits();
     final actifs = await comptesRepo.getAllComptesActifsPassifs();
+    // Load factures for facture dropdown (date, contact name, participation), sorted by paye
+    final factures = await FactureRepository().getFacturesForDropdown();
 
     DateTime initialDate = ecriture?.date ?? DateTime.now();
     String formatDdMmYyyy(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
@@ -77,7 +117,7 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
     String nature = ecriture?.nature ?? 'recette';
     final montantCtrl = TextEditingController(text: (ecriture?.montant ?? 0.0).toString());
     final descriptionCtrl = TextEditingController(text: ecriture?.description ?? '');
-    final factureCtrl = TextEditingController(text: ecriture?.factureId?.toString() ?? '');
+    int? selectedFactureId = ecriture?.factureId;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -88,75 +128,121 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: dateCtrl, decoration: const InputDecoration(labelText: 'Date (dd.MM.yyyy)')),
-
-                // Compte charge/produit dropdown
-                DropdownButtonFormField<int>(
-                  value: selectedCharge,
-                  items: charges
-                      .map((Compte c) => DropdownMenuItem<int>(value: c.idCompte, child: Text(c.libelle)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedCharge = v),
-                  decoration: const InputDecoration(labelText: 'Compte charge/produit'),
-                ),
-
-                // Compte actif/passif dropdown
-                DropdownButtonFormField<int>(
-                  value: selectedActif,
-                  items: actifs
-                      .map((Compte c) => DropdownMenuItem<int>(value: c.idCompte, child: Text(c.libelle)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedActif = v),
-                  decoration: const InputDecoration(labelText: 'Compte actif/passif'),
-                ),
-
-                DropdownButtonFormField<String>(
-                  value: nature,
-                  items: const [
-                    DropdownMenuItem(value: 'recette', child: Text('recette')),
-                    DropdownMenuItem(value: 'depense', child: Text('depense')),
+                // première ligne: Date, compte Actif/Passif, compte Charge/Produit, sens
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(controller: dateCtrl, decoration: const InputDecoration(labelText: 'Date (dd.MM.yyyy)')),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: DropdownButtonFormField<int>(
+                        initialValue: selectedActif,
+                        items: actifs.map((Compte c) => DropdownMenuItem<int>(value: c.idCompte, child: Text(c.libelle))).toList(),
+                        onChanged: (v) => setState(() => selectedActif = v),
+                        decoration: const InputDecoration(labelText: 'Compte A/P'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: DropdownButtonFormField<int>(
+                        initialValue: selectedCharge,
+                        items: charges.map((Compte c) => DropdownMenuItem<int>(value: c.idCompte, child: Text(c.libelle))).toList(),
+                        onChanged: (v) => setState(() => selectedCharge = v),
+                        decoration: const InputDecoration(labelText: 'Compte C/P'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: nature,
+                        items: const [
+                          DropdownMenuItem(value: 'recette', child: Text('recette')),
+                          DropdownMenuItem(value: 'depense', child: Text('depense')),
+                        ],
+                        onChanged: (v) => setState(() => nature = v ?? nature),
+                        decoration: const InputDecoration(labelText: 'Nature'),
+                      ),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => nature = v ?? nature),
-                  decoration: const InputDecoration(labelText: 'Nature'),
                 ),
 
-                TextField(controller: montantCtrl, decoration: const InputDecoration(labelText: 'Montant'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
-                TextField(controller: descriptionCtrl, decoration: const InputDecoration(labelText: 'Description')),
-                TextField(controller: factureCtrl, decoration: const InputDecoration(labelText: 'Facture id'), keyboardType: TextInputType.number),
+                const SizedBox(height: 8),
+
+                // deuxième ligne: libellé, montant
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: TextField(controller: descriptionCtrl, decoration: const InputDecoration(labelText: 'Libellé')),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: TextField(controller: montantCtrl, decoration: const InputDecoration(labelText: 'Montant'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+                    ),
+                  ],
+                ),
+                // troisième ligne: facture, bouton enregistrer
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: DropdownButtonFormField<int?>(
+                        initialValue: selectedFactureId,
+                        items: factures
+                            .map((fp) => DropdownMenuItem<int?>(
+                                  value: fp.idFacture,
+                                  child: Text('${_formatDate(fp.dateOp)} - ${fp.nomContact } - ${fp.montantParticipation.toStringAsFixed(2)}'),
+                                ))
+                            .toList(),
+                        onChanged: (v) => setState(() => selectedFactureId = v),
+                        decoration: const InputDecoration(labelText: 'Facture'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          DateTime? parsedDate = AppHelper.parseDateString(dateCtrl.text);
+                          parsedDate ??= DateTime.now();
+                          final newE = Ecriture(
+                            id: ecriture?.id,
+                            date: parsedDate,
+                            compteChargeProduitId: selectedCharge ?? 0,
+                            compteActifPassifId: selectedActif ?? 0,
+                            nature: nature,
+                            montant: double.tryParse(montantCtrl.text) ?? 0.0,
+                            description: descriptionCtrl.text.trim().isEmpty ? null : descriptionCtrl.text.trim(),
+                            factureId: selectedFactureId,
+                            createdAt: ecriture?.createdAt,
+                            updatedAt: DateTime.now(),
+                          );
+
+                          if (newE.id == null) {
+                            await _repo.insert(newE);
+                          } else {
+                            await _repo.update(newE);
+                          }
+
+                          if (!mounted) return;
+                          Navigator.of(context).pop(true);
+                        },
+                        child: const Text('Enregistrer'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Annuler')),
-            TextButton(
-              onPressed: () async {
-                DateTime? parsedDate = AppHelper.parseDateString(dateCtrl.text);
-                if (parsedDate == null) parsedDate = DateTime.now();
-
-                final newE = Ecriture(
-                  id: ecriture?.id,
-                  date: parsedDate,
-                  compteChargeProduitId: selectedCharge ?? 0,
-                  compteActifPassifId: selectedActif ?? 0,
-                  nature: nature,
-                  montant: double.tryParse(montantCtrl.text) ?? 0.0,
-                  description: descriptionCtrl.text.trim().isEmpty ? null : descriptionCtrl.text.trim(),
-                  factureId: factureCtrl.text.trim().isEmpty ? null : int.tryParse(factureCtrl.text),
-                  createdAt: ecriture?.createdAt,
-                  updatedAt: DateTime.now(),
-                );
-
-                if (newE.id == null) {
-                  await _repo.insert(newE);
-                } else {
-                  await _repo.update(newE);
-                }
-
-                if (!mounted) return;
-                Navigator.of(context).pop(true);
-              },
-              child: const Text('Enregistrer'),
-            ),
           ],
         ),
       ),
@@ -167,30 +253,112 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // compute totals for displayed items
+    final double totalRecettes = _items.where((e) => e.nature == 'recette').fold(0.0, (s, e) => s + e.montant);
+    final double totalDepenses = _items.where((e) => e.nature == 'depense').fold(0.0, (s, e) => s + e.montant);
+    final double netTotal = totalRecettes - totalDepenses;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Écritures'),
+        backgroundColor: Colors.blue[50],
         actions: [
-          IconButton(
-            tooltip: 'Nouvelle écriture',
-            icon: const Icon(Icons.add),
-            onPressed: () => _edit(),
+          // Year dropdown
+          if (_years.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                //decoration: BoxDecoration(color: const Color(0xFFB3E5FC), borderRadius: BorderRadius.circular(6.0)),
+                child: 
+                DropdownButton<int?>(
+                  value: _selectedYear,
+                  hint: const Text('Année'),
+                  items: [
+                    const DropdownMenuItem<int?>(value: null, child: Text('Tout')),
+                    ..._years.map((y) => DropdownMenuItem<int?>(value: y, child: Text(y.toString()))),
+                  ],
+                  onChanged: (v) => setState(() => _selectedYear = v),
+                  underline: const SizedBox.shrink(),
+                  //dropdownColor: const Color(0xFFB3E5FC),
+                ),
+              ),
+            ),
+
+          // Compte charge/produit dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+              //decoration: BoxDecoration(color: const Color(0xFFB3E5FC), borderRadius: BorderRadius.circular(6.0)),
+              child: DropdownButton<int?>(
+                value: _selectedChargeId,
+                hint: const Text('C/P'),
+                items: [
+                  const DropdownMenuItem<int?>(value: null, child: Text('Tout')),
+                  ..._charges.map((c) => DropdownMenuItem<int?>(value: c.idCompte, child: Text(c.libelle))),
+                ],
+                onChanged: (v) => setState(() => _selectedChargeId = v),
+                underline: const SizedBox.shrink(),
+                //dropdownColor: const Color(0xFFB3E5FC),
+              ),
+            ),
           ),
+
+          // Compte actif/passif dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+              //decoration: BoxDecoration(color: const Color(0xFFB3E5FC), borderRadius: BorderRadius.circular(6.0)),
+              child: DropdownButton<int?>(
+                value: _selectedActifId,
+                hint: const Text('A/P'),
+                items: [
+                  const DropdownMenuItem<int?>(value: null, child: Text('Tout')),
+                  ..._actifs.map((c) => DropdownMenuItem<int?>(value: c.idCompte, child: Text(c.libelle))),
+                ],
+                onChanged: (v) => setState(() => _selectedActifId = v),
+                underline: const SizedBox.shrink(),
+                //dropdownColor: const Color(0xFFB3E5FC),
+              ),
+            ),
+          ),
+
+          // Filtrer button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: TextButton(
+              style: TextButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.black),
+              onPressed: _applyFilter,
+              child: const Text('Filtrer'),
+            ),
+          ),
+          Padding(padding:  const EdgeInsets.symmetric(horizontal: 12.0), child: Container()), // spacer
+
+          //IconButton(
+          //  tooltip: 'Nouvelle écriture',
+          //  icon: const Icon(Icons.add),
+          //  onPressed: () => _edit(),
+          //),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: const [
+              child: Column(
+                children: [
+                  // saisie card en haut
+                  EcritureSaisieCard(onSaved: _load),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: const [
                     DataColumn(label: Text('Date')),
-                    DataColumn(label: Text('Compte C/P')),
                     DataColumn(label: Text('Compte A/P')),
+                    DataColumn(label: Text('Compte C/P')),
                     DataColumn(label: Text('Nature')),
+                    DataColumn(label: Text('Libellé')),
                     DataColumn(label: Text('Montant')),
-                    DataColumn(label: Text('Desc')),
                     DataColumn(label: Text('Facture')),
                     DataColumn(label: Text('Actions')),
                   ],
@@ -198,11 +366,11 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
                       .map(
                         (e) => DataRow(cells: [
                           DataCell(Text(_formatDate(e.date))),
-                          DataCell(Text(_compteLabels[e.compteChargeProduitId] ?? e.compteChargeProduitId.toString())),
                           DataCell(Text(_compteLabels[e.compteActifPassifId] ?? e.compteActifPassifId.toString())),
+                          DataCell(Text(_compteLabels[e.compteChargeProduitId] ?? e.compteChargeProduitId.toString())),
                           DataCell(Text(e.nature)),
-                          DataCell(Text(e.montant.toStringAsFixed(2))),
                           DataCell(Text(e.description ?? '')),
+                          DataCell(Text(e.montant.toStringAsFixed(2))),
                           DataCell(Text(e.factureId?.toString() ?? '')),
                           DataCell(Row(
                             children: [
@@ -221,9 +389,28 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
                         ]),
                       )
                       .toList(),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
+      bottomNavigationBar: Container(
+        color: Colors.grey[100],
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const Spacer(),
+            Text(
+              'Total: ${netTotal.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: netTotal >= 0 ? Colors.green[700] : Colors.red[700],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

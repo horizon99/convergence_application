@@ -145,21 +145,21 @@ class _DossiersListScreenState extends State<DossiersListScreen> {
               TextButton.icon(
                 onPressed: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ArchivesListScreen()),
-                  );
-                },
-                icon: const Icon(Icons.archive),
-                label: const Text('Archives'),
-              ),
-
-              TextButton.icon(
-                onPressed: () async {
-                  await Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const EcritureesListScreen()),
                   );
                 },
                 icon: const Icon(Icons.account_balance_wallet),
                 label: const Text('Comptabilité'),
+              ),
+
+              TextButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ArchivesListScreen()),
+                  );
+                },
+                icon: const Icon(Icons.archive),
+                label: const Text('Archives'),
               ),
 
               TextButton.icon(
