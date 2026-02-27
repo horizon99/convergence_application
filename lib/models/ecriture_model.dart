@@ -32,7 +32,7 @@ class Ecriture {
     }
 
     return Ecriture(
-      id: map['id'],
+      id: map['id_ecriture'],
       date: parseDate(map['date']) ?? DateTime.now(),
       compteChargeProduitId: map['compte_charge_produit_id'],
       compteActifPassifId: map['compte_actif_passif_id'],
@@ -47,7 +47,7 @@ class Ecriture {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'id_ecriture': id,
       'date': date.toIso8601String(),
       'compte_charge_produit_id': compteChargeProduitId,
       'compte_actif_passif_id': compteActifPassifId,

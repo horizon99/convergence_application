@@ -70,8 +70,10 @@ class AppHelper {
     final v = s.trim();
     if (v.isEmpty) return null;
 
-    final iso = DateTime.tryParse(v);
-    if (iso != null) return iso;
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(v)) {
+      final iso = DateTime.tryParse(v);
+      if (iso != null) return iso;
+    }
 
     final parts = v.split(RegExp(r'[.\-\/]'));
     if (parts.length >= 3) {

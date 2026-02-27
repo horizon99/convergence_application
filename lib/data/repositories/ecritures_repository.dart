@@ -9,7 +9,7 @@ class EcrituresRepository {
       'ecritures',
       where: factureId != null ? 'facture_id = ?' : null,
       whereArgs: factureId != null ? [factureId] : null,
-      orderBy: 'date DESC, id DESC',
+      orderBy: 'date DESC, id_ecriture DESC',
     );
 
     return result.map((e) => Ecriture.fromMap(e)).toList();
@@ -19,7 +19,7 @@ class EcrituresRepository {
     final Database db = await DatabaseHelper.instance.database;
     final result = await db.query(
       'ecritures',
-      where: 'id = ?',
+      where: 'id_ecriture = ?',
       whereArgs: [id],
     );
 
@@ -39,14 +39,14 @@ class EcrituresRepository {
     return await db.update(
       'ecritures',
       map,
-      where: 'id = ?',
+      where: 'id_ecriture = ?',
       whereArgs: [e.id],
     );
   }
 
   Future<int> delete(int id) async {
     final db = await DatabaseHelper.instance.database;
-    return await db.delete('ecritures', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('ecritures', where: 'id_ecriture = ?', whereArgs: [id]);
   }
 
   Future<double> sumMontant({int? factureId}) async {
