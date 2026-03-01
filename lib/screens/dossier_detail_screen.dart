@@ -149,7 +149,7 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
       /// Barre du haut avec bouton Enregistrer
       /// ─────────────────────────────
       appBar: AppBar(
-        title: const Text('Dossier'),
+        title: Text('Dossier No ${widget.dossier.id}'),
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),

@@ -4,34 +4,49 @@ import '../database/database_helper.dart';
 
 class MediateurRepository { 
   Future<List<Mediateur>> getAllMediateurs() async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query(
-      'mediateurs',
-      orderBy: 'id_mediateur ASC',
-    );
+      final result = await db.query(
+        'mediateurs',
+        orderBy: 'id_mediateur ASC',
+      );
 
-    return result.map((e) => Mediateur.fromMap(e)).toList();
+      return result.map((e) => Mediateur.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in MediateurRepository.getAllMediateurs: $e\n$st');
+      rethrow;
+    }
   } 
 
   Future<Mediateur> getMediateur() async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.rawQuery(
-      'SELECT * FROM mediateur LIMIT 1',
-    );
-    final resultFirst = result.first;
+      final result = await db.rawQuery(
+        'SELECT * FROM mediateur LIMIT 1',
+      );
+      final resultFirst = result.first;
 
-    return Mediateur.fromMap(resultFirst);
+      return Mediateur.fromMap(resultFirst);
+    } catch (e) {
+      //print('Exception in MediateurRepository.getMediateur: $e\n$st');
+      rethrow;
+    }
   } 
 
   Future<int> updateMediateur(Mediateur mediateur) async {
-    final Database db = await DatabaseHelper.instance.database;
-    return await db.update(
-      'mediateur',
-      mediateur.toMap(),
-      where: 'id_mediateur = ?',
-      whereArgs: [mediateur.idMediateur],
-    );
+    try {
+      final Database db = await DatabaseHelper.instance.database;
+      return await db.update(
+        'mediateur',
+        mediateur.toMap(),
+        where: 'id_mediateur = ?',
+        whereArgs: [mediateur.idMediateur],
+      );
+    } catch (e) {
+      //print('Exception in MediateurRepository.updateMediateur: $e\n$st');
+      rethrow;
+    }
   }
 }

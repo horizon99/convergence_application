@@ -4,10 +4,11 @@ import '../../models/parties_model.dart';
 
 class PartiesRepository {
   Future<List<Parties>> getPartiesByDossier(int dossierId) async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final List<Map<String, dynamic>> maps = await db.rawQuery(
-      '''
+      final List<Map<String, dynamic>> maps = await db.rawQuery(
+        '''
       SELECT 
         p.id_partie,
         p.contact_id,
@@ -25,19 +26,28 @@ class PartiesRepository {
       WHERE p.dossier_id = ?
       ORDER BY c.nom, c.prenom
       ''',
-      [dossierId],
-    );
+        [dossierId],
+      );
 
-    return maps.map((e) => Parties.fromMap(e)).toList();
+      return maps.map((e) => Parties.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in PartiesRepository.getPartiesByDossier: $e\n$st');
+      rethrow;
+    }
   }
   
   Future<int> deletePartie(int idPartie) async {
-  final db = await DatabaseHelper.instance.database;
+  try {
+    final db = await DatabaseHelper.instance.database;
 
-  return await db.delete(
-    'parties',
-    where: 'id_partie = ?',
-    whereArgs: [idPartie],
-  );
+    return await db.delete(
+      'parties',
+      where: 'id_partie = ?',
+      whereArgs: [idPartie],
+    );
+  } catch (e) {
+    //print('Exception in PartiesRepository.deletePartie: $e\n$st');
+    rethrow;
+  }
 }
 }

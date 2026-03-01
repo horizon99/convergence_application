@@ -4,70 +4,101 @@ import '../../models/facture_model.dart';
 
 class FactureRepository {
   Future<List<Facture>> getAllFactures() async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query('factures');
+      final result = await db.query('factures');
 
-    return result.map((e) => Facture.fromMap(e)).toList();
+      return result.map((e) => Facture.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in FactureRepository.getAllFactures: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<List<Facture>> getFacturesFromDossier(int dossierId) async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query(
-      'factures',
-      where: 'dossier_id = ?', 
-      whereArgs: [dossierId],
-    );
+      final result = await db.query(
+        'factures',
+        where: 'dossier_id = ?', 
+        whereArgs: [dossierId],
+      );
 
-    return result.map((e) => Facture.fromMap(e)).toList();
+      return result.map((e) => Facture.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in FactureRepository.getFacturesFromDossier: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<Facture?> getFactureById(int idFacture) async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    final result = await db.query(
-      'factures',
-      where: 'id_facture = ?',
-      whereArgs: [idFacture],
-      limit: 1,
-    );
+      final result = await db.query(
+        'factures',
+        where: 'id_facture = ?',
+        whereArgs: [idFacture],
+        limit: 1,
+      );
 
-    if (result.isEmpty) return null;
-    return Facture.fromMap(result.first);
+      if (result.isEmpty) return null;
+      return Facture.fromMap(result.first);
+    } catch (e) {
+      //print('Exception in FactureRepository.getFactureById: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<int> updateFacture(Facture facture) async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    return await db.update(
-      'factures',
-      facture.toMap(),
-      where: 'id_facture = ?',
-      whereArgs: [facture.idFacture],
-    );
+      return await db.update(
+        'factures',
+        facture.toMap(),
+        where: 'id_facture = ?',
+        whereArgs: [facture.idFacture],
+      );
+    } catch (e) {
+      //print('Exception in FactureRepository.updateFacture: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<int> insertFacture(Facture facture) async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    return await db.insert('factures', facture.toMap());
+      return await db.insert('factures', facture.toMap());
+    } catch (e) {
+      //print('Exception in FactureRepository.insertFacture: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<int> deleteFacture(int idFacture) async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    return await db.delete(
-      'factures',
-      where: 'id_facture = ?',
-      whereArgs: [idFacture],
-    );
+      return await db.delete(
+        'factures',
+        where: 'id_facture = ?',
+        whereArgs: [idFacture],
+      );
+    } catch (e) {
+      //print('Exception in FactureRepository.deleteFacture: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<List<FacturePaiement>> getFacturesAndPaymentsDossier(int dossierId) async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    final result = await db.rawQuery('''
+      final result = await db.rawQuery('''
       SELECT
     f.id_facture,
     f.dossier_id,
@@ -104,16 +135,21 @@ GROUP BY
 
     ''', [dossierId]);
 
-    // Traitez les résultats comme nécessaire, par exemple en les convertissant en objets Facture et Payment
-    // Vous pouvez créer une classe combinée pour représenter les données de facture et de paiement si nécessaire
+      // Traitez les résultats comme nécessaire, par exemple en les convertissant en objets Facture et Payment
+      // Vous pouvez créer une classe combinée pour représenter les données de facture et de paiement si nécessaire
 
-    return result.map((e) => FacturePaiement.fromMap(e)).toList();
+      return result.map((e) => FacturePaiement.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in FactureRepository.getFacturesAndPaymentsDossier: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<List<FacturePaiement>> getAllFacturesAndPayments() async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    final result = await db.rawQuery('''
+      final result = await db.rawQuery('''
       SELECT
     f.id_facture,
     f.date_facture,
@@ -147,16 +183,21 @@ GROUP BY
     f.id_facture;
     ''');
 
-    // Traitez les résultats comme nécessaire, par exemple en les convertissant en objets Facture et Payment
-    // Vous pouvez créer une classe combinée pour représenter les données de facture et de paiement si nécessaire
+      // Traitez les résultats comme nécessaire, par exemple en les convertissant en objets Facture et Payment
+      // Vous pouvez créer une classe combinée pour représenter les données de facture et de paiement si nécessaire
 
-    return result.map((e) => FacturePaiement.fromMap(e)).toList();
+      return result.map((e) => FacturePaiement.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in FactureRepository.getAllFacturesAndPayments: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<List<FacturesForDropdown>> getFacturesForDropdown() async {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    final result = await db.rawQuery('''
+      final result = await db.rawQuery('''
       SELECT
         f.id_facture,
         f.date_facture,
@@ -168,7 +209,11 @@ GROUP BY
       ORDER BY f.paye
     ''');
 
-    return result.map((e) => FacturesForDropdown.fromMap(e)).toList();
+      return result.map((e) => FacturesForDropdown.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in FactureRepository.getFacturesForDropdown: $e\n$st');
+      rethrow;
+    }
   }
 
 }

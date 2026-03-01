@@ -1,127 +1,34 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
+import '../data/repositories/mediateur_repository.dart';
 import '../models/ecriture_model.dart';
-
-class CompteReport extends StatelessWidget {
-  final List<Ecriture> items;
-  final Map<int, String> compteLabels;
-  final String accountName;
-
-  const CompteReport({
-    super.key,
-    required this.items,
-    required this.compteLabels,
-    required this.accountName,
-  });
+import '../models/mediateur_model.dart';
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 
   @override
-  Widget build(BuildContext context) {
-    final double totalRecettes =
-        items.where((e) => e.nature == 'recette').fold(0.0, (s, e) => s + e.montant);
-    final double totalDepenses =
-        items.where((e) => e.nature == 'depense').fold(0.0, (s, e) => s + e.montant);
-    final double netTotal = totalRecettes - totalDepenses;
-
-    // sort items by date ascending for display
-    final sortedItems = List<Ecriture>.from(items)
-      ..sort((a, b) => a.date.compareTo(b.date));
-
-    // detect whether one of the compte columns is constant across all items
-    final bool allSameAP = sortedItems.isNotEmpty && sortedItems.every((e) => e.compteActifPassifId == sortedItems[0].compteActifPassifId);
-    final bool allSameCP = sortedItems.isNotEmpty && sortedItems.every((e) => e.compteChargeProduitId == sortedItems[0].compteChargeProduitId);
-    final bool useSingleCompteColumn = allSameAP || allSameCP;
-    final bool selectedIsAP = allSameAP;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Relevé des écritures: $accountName'),
-        backgroundColor: Colors.blue[50],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: useSingleCompteColumn
-                    ? [
-                        const DataColumn(label: Text('Date')),
-                        DataColumn(label: Text(selectedIsAP ? 'Compte A/P' : 'Compte C/P')),
-                        const DataColumn(label: Text('Libellé')),
-                        const DataColumn(label: Text('Recette')),
-                        const DataColumn(label: Text('Dépense')),
-                      ]
-                    : const [
-                        DataColumn(label: Text('Date')),
-                        DataColumn(label: Text('Compte A/P')),
-                        DataColumn(label: Text('Compte C/P')),
-                        DataColumn(label: Text('Libellé')),
-                        DataColumn(label: Text('Recette')),
-                        DataColumn(label: Text('Dépense')),
-                      ],
-                rows: sortedItems.map((e) {
-                  if (useSingleCompteColumn) {
-                    final int id = selectedIsAP ? e.compteActifPassifId : e.compteChargeProduitId;
-                    return DataRow(cells: [
-                      DataCell(Text(_formatDate(e.date))),
-                      DataCell(Text(compteLabels[id] ?? id.toString())),
-                      DataCell(Text(e.description ?? '')),
-                      DataCell(Text(e.nature == 'recette' ? e.montant.toStringAsFixed(2) : '')),
-                      DataCell(Text(e.nature == 'depense' ? e.montant.toStringAsFixed(2) : '')),
-                    ]);
-                  } else {
-                    return DataRow(cells: [
-                      DataCell(Text(_formatDate(e.date))),
-                      DataCell(Text(compteLabels[e.compteActifPassifId] ?? e.compteActifPassifId.toString())),
-                      DataCell(Text(compteLabels[e.compteChargeProduitId] ?? e.compteChargeProduitId.toString())),
-                      DataCell(Text(e.description ?? '')),
-                      DataCell(Text(e.nature == 'recette' ? e.montant.toStringAsFixed(2) : '')),
-                      DataCell(Text(e.nature == 'depense' ? e.montant.toStringAsFixed(2) : '')),
-                    ]);
-                  }
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Total recettes: ${totalRecettes.toStringAsFixed(2)}'),
-                  Text('Total dépenses: ${totalDepenses.toStringAsFixed(2)}'),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Solde du compte: ${netTotal.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: netTotal >= 0 ? Colors.green[700] : Colors.red[700],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // Build a PDF document for the compte report and return bytes
 Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> compteLabels, String accountName) async {
   final doc = pw.Document();
+  final Mediateur mediateur = await MediateurRepository().getMediateur();
+
+  // Load OpenSans fonts from assets and register them with the PDF theme
+  final ByteData regularData = await rootBundle.load('assets/fonts/OpenSans-Regular.ttf');
+  final ByteData boldData = await rootBundle.load('assets/fonts/OpenSans-Bold.ttf');
+  final pw.Font fontRegular = pw.Font.ttf(regularData.buffer.asByteData());
+  final pw.Font fontBold = pw.Font.ttf(boldData.buffer.asByteData());
+
+  final NumberFormat montantFormat = NumberFormat("#,##0.00", 'de_CH');
 
   // sort items by date ascending for PDF
   final sorted = List<Ecriture>.from(items)..sort((a, b) => a.date.compareTo(b.date));
@@ -138,10 +45,56 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
 
   doc.addPage(
     pw.MultiPage(
+      theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
       pageFormat: PdfPageFormat.a4,
+        header: (context) => pw.Align(
+          alignment: pw.Alignment.centerLeft,
+          child: pw.Row(
+            children: [
+              pw.Expanded(
+                child: pw.Text(
+                  'Exercice ${sorted.isNotEmpty ? sorted[0].date.year : DateTime.now().year}',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.Text(
+                mediateur.nom ?? 'Cabinet de médiation',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        footer: (context) => pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: 
+          pw.Row(
+            children: [
+              pw.Expanded(
+                child: pw.Text(
+                  _formatDate(DateTime.now()),
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+          pw.Text(
+            'Page ${context.pageNumber}/${context.pagesCount}',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+                    ],
+          ),
+        ),  
+          
+          
+
       build: (pw.Context ctx) => [
+        pw. SizedBox(height: 8),
         pw.Header(level: 0, child: pw.Text('Relevé des écritures: $accountName')),
-        pw.SizedBox(height: 8),
+        //pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder(),
           defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
@@ -176,8 +129,8 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${e.date.day.toString().padLeft(2, '0')}.${e.date.month.toString().padLeft(2, '0')}.${e.date.year}', style: const pw.TextStyle(fontSize: 9))),
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(compteLabels[id] ?? id.toString(), style: const pw.TextStyle(fontSize: 9))),
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(e.description ?? '', style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'recette' ? e.montant.toStringAsFixed(2) : '', style: const pw.TextStyle(fontSize: 9)))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'depense' ? e.montant.toStringAsFixed(2) : '', style: const pw.TextStyle(fontSize: 9)))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'recette' ? montantFormat.format(e.montant) : '', style: const pw.TextStyle(fontSize: 9)))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'depense' ? montantFormat.format(e.montant) : '', style: const pw.TextStyle(fontSize: 9)))),
                   ],
                 );
               } else {
@@ -188,8 +141,8 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(compteLabels[e.compteActifPassifId] ?? e.compteActifPassifId.toString(), style: const pw.TextStyle(fontSize: 9))),
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(compteLabels[e.compteChargeProduitId] ?? e.compteChargeProduitId.toString(), style: const pw.TextStyle(fontSize: 9))),
                     pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(e.description ?? '', style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'recette' ? e.montant.toStringAsFixed(2) : '', style: const pw.TextStyle(fontSize: 9)))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'depense' ? e.montant.toStringAsFixed(2) : '', style: const pw.TextStyle(fontSize: 9)))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'recette' ? montantFormat.format(e.montant) : '', style: const pw.TextStyle(fontSize: 9)))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(e.nature == 'depense' ? montantFormat.format(e.montant) : '', style: const pw.TextStyle(fontSize: 9)))),
                   ],
                 );
               }
@@ -202,16 +155,16 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Totaux', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(totalRecettes.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(totalDepenses.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(totalRecettes), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(totalDepenses), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
                     ]
                   : [
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Totaux', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(totalRecettes.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(totalDepenses.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(totalRecettes), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(totalDepenses), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
                     ],
             ),
             pw.TableRow(
@@ -222,7 +175,7 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Solde du compte', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(netTotal.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(netTotal), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
                     ]
                   : [
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
@@ -230,7 +183,7 @@ Future<Uint8List> buildCompteReportPdf(List<Ecriture> items, Map<int, String> co
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Solde du compte', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
                       pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
-                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(netTotal.toStringAsFixed(2), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(montantFormat.format(netTotal), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)))),
                     ],
             ),
           ],

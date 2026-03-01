@@ -4,8 +4,9 @@ import '../../models/dossier_model.dart';
 
 class DossierRepository {
   Future<Dossier?> getDossierById(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    final result = await db.rawQuery('''
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final result = await db.rawQuery('''
       SELECT 
         d.id_dossier,
         d.libelle,
@@ -27,19 +28,24 @@ class DossierRepository {
       WHERE d.id_dossier = ?
     ''', [id]);
 
-    if (result.isNotEmpty) {
-      return Dossier.fromMap(result.first);
+      if (result.isNotEmpty) {
+        return Dossier.fromMap(result.first);
+      }
+      return null;
+    } catch (e) {
+      //print('Exception in DossierRepository.getDossierById: $e\n$st');
+      rethrow;
     }
-    return null;
   }
 
 
   Future<List<Dossier>> getAllDossiers() async {
-    final Database db = await DatabaseHelper.instance.database;
+    try {
+      final Database db = await DatabaseHelper.instance.database;
 
-    //final List<Map<String, dynamic>> maps =
-    //await db.query('dossiers', orderBy: 'Date_creation DESC');
-    final List<Map<String, dynamic>> result = await db.rawQuery('''
+      //final List<Map<String, dynamic>> maps =
+      //await db.query('dossiers', orderBy: 'Date_creation DESC');
+      final List<Map<String, dynamic>> result = await db.rawQuery('''
       SELECT 
         d.id_dossier,
         d.libelle,
@@ -61,7 +67,11 @@ class DossierRepository {
       WHERE d.archive = 0
       ORDER BY d.priorite_id ASC
       ''');
-    return result.map((e) => Dossier.fromMap(e)).toList();
+      return result.map((e) => Dossier.fromMap(e)).toList();
+    } catch (e) {
+      //print('Exception in DossierRepository.getAllDossiers: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<int> updateDossier(Dossier dossier) async {
@@ -95,40 +105,44 @@ class DossierRepository {
     }
   }
 }
-
 Future<int> deleteDossier(int idDossier) async {
-  final db = await DatabaseHelper.instance.database;
+  try {
+    final db = await DatabaseHelper.instance.database;
 
-  return await db.delete(
-    'dossiers',
-    where: 'id_dossier = ?',
-    whereArgs: [idDossier],
-  );
+    return await db.delete(
+      'dossiers',
+      where: 'id_dossier = ?',
+      whereArgs: [idDossier],
+    );
+  } catch (e) {
+    //print('Exception in deleteDossier: $e\n$st');
+    rethrow;
+  }
 }
 
 Future<int> insertDossier(Dossier dossier) async {
-  final db = await DatabaseHelper.instance.database;
   try {
+    final db = await DatabaseHelper.instance.database;
     return await db.insert('dossiers', {
-    'libelle': dossier.libelle,
-    'groupe_tarif': dossier.groupeTarif,
-    'tva': dossier.tva,
-    'priorite_id': dossier.prioriteId,
-    'a_faire': dossier.afaire,
-    'ref_tribunal': dossier.refTribunal,
-    'archive': dossier.archive ? 1 : 0,
-    'date_archive': dossier.dateArchive?.toIso8601String(),
-    'no_archive': dossier.noArchive,
-    'date_creation': dossier.dateCreation?.toIso8601String(),
-    'libelle_client': dossier.libelleClient,
-    'notes': dossier.notes,
-  });
+      'libelle': dossier.libelle,
+      'groupe_tarif': dossier.groupeTarif,
+      'tva': dossier.tva,
+      'priorite_id': dossier.prioriteId,
+      'a_faire': dossier.afaire,
+      'ref_tribunal': dossier.refTribunal,
+      'archive': dossier.archive ? 1 : 0,
+      'date_archive': dossier.dateArchive?.toIso8601String(),
+      'no_archive': dossier.noArchive,
+      'date_creation': dossier.dateCreation?.toIso8601String(),
+      'libelle_client': dossier.libelleClient,
+      'notes': dossier.notes,
+    });
   } on DatabaseException catch (e) {
     // Log and rethrow a readable exception for the caller
     //print('DatabaseException in insertDossier: ${e.toString()}');
     throw Exception('Erreur base de données: ${e.toString()}');
   } catch (e) {
-    //print('Unexpected error in insertDossier: $e');
+    //print('Unexpected error in insertDossier: $e\n$st');
     rethrow;
   }
 }

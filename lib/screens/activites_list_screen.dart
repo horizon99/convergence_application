@@ -111,7 +111,7 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$_dossierLibelleClient: liste des activités'),
+        title: Text('Activités: $_dossierLibelleClient (${widget.dossierId})'),
         backgroundColor: Colors.blue[50],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(70),

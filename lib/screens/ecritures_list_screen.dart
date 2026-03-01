@@ -572,7 +572,12 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
               child: Column(
                 children: [
                   // saisie card en haut
-                  EcritureSaisieCard(onSaved: _load),
+                  ExpansionTile(
+                    title: const Text('Saisies d\'écritures'),
+                    children: [
+                      EcritureSaisieCard(onSaved: _load),
+                    ],
+                  ),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(

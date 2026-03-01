@@ -106,3 +106,5 @@ flutter:
   # see https://flutter.dev/to/font-from-package
   assets:
     - assets/db/convergence_db.sqlite
+    - assets/fonts/OpenSans-Regular.ttf
+    - assets/fonts/OpenSans-Bold.ttf

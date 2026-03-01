@@ -1,6 +1,7 @@
 import 'package:convergence_application/app_helper.dart';
 import 'package:convergence_application/data/repositories/mediateur_repository.dart';
 import 'package:convergence_application/models/mediateur_model.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -19,6 +20,17 @@ class ActivitesFacturablesReport {
     final pdf = pw.Document();
     final dateFmt = DateFormat('dd.MM.yyyy');
     final Mediateur mediateur = await MediateurRepository().getMediateur();
+    final NumberFormat montantFormat = NumberFormat("#,##0.00", 'de_CH');
+
+    // Load OpenSans fonts from assets and register them with the PDF theme
+    final ByteData regularData = await rootBundle.load(
+      'assets/fonts/OpenSans-Regular.ttf',
+    );
+    final ByteData boldData = await rootBundle.load(
+      'assets/fonts/OpenSans-Bold.ttf',
+    );
+    final pw.Font fontRegular = pw.Font.ttf(regularData.buffer.asByteData());
+    final pw.Font fontBold = pw.Font.ttf(boldData.buffer.asByteData());
 
     /// ─────────────────────────────
     /// Regroupement par tarif
@@ -26,9 +38,7 @@ class ActivitesFacturablesReport {
     final Map<String, List<ActiviteFacturable>> groupes = {};
 
     for (final a in activites) {
-      final code = a.activite.codeTarif.isNotEmpty
-          ? a.activite.codeTarif
-          : '-';
+      final code = a.activite.codeTarif.isNotEmpty ? a.activite.codeTarif : '-';
       groupes.putIfAbsent(code, () => []).add(a);
     }
 
@@ -48,6 +58,7 @@ class ActivitesFacturablesReport {
 
     pdf.addPage(
       pw.MultiPage(
+        theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
         header: (context) => pw.Align(
@@ -117,7 +128,10 @@ class ActivitesFacturablesReport {
           /// ───────────── GROUPES
           ...groupesTries.expand((groupe) {
             final activites = groupe.value
-              ..sort((a, b) => a.activite.dateActivite.compareTo(b.activite.dateActivite));
+              ..sort(
+                (a, b) =>
+                    a.activite.dateActivite.compareTo(b.activite.dateActivite),
+              );
 
             final tarifHoraire = activites.first.tarifHoraire;
             final descriptionTarif = activites.first.descriptionTarif;
@@ -220,7 +234,7 @@ class ActivitesFacturablesReport {
                       pw.Container(
                         width: 70,
                         child: pw.Text(
-                          'CHF ${totalFraisGroupe.toStringAsFixed(2)}',
+                          'CHF ${montantFormat.format(totalFraisGroupe)}',
                           textAlign: pw.TextAlign.right,
                           style: pw.TextStyle(
                             fontSize: 10,
@@ -233,7 +247,7 @@ class ActivitesFacturablesReport {
                       pw.Container(
                         width: 70,
                         child: pw.Text(
-                          'CHF ${totalHonorairesGroupe.toStringAsFixed(2)}',
+                          'CHF ${montantFormat.format(totalHonorairesGroupe)}',
                           textAlign: pw.TextAlign.right,
                           style: pw.TextStyle(
                             fontSize: 10,
@@ -292,7 +306,7 @@ class ActivitesFacturablesReport {
                     _tr('Honoraires'),
                     _tr('CHF'),
                     _tr(
-                      totalHonoraires.toStringAsFixed(2),
+                      montantFormat.format(totalHonoraires),
                       align: pw.TextAlign.right,
                     ),
                   ],
@@ -303,7 +317,7 @@ class ActivitesFacturablesReport {
                     _tr('Montant honoraires et frais'),
                     _tr('CHF'),
                     _tr(
-                      totalMontant.toStringAsFixed(2),
+                      montantFormat.format(totalMontant),
                       align: pw.TextAlign.right,
                     ),
                   ],
