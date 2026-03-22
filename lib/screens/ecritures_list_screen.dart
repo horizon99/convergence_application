@@ -7,6 +7,7 @@ import '../models/ecriture_model.dart';
 import '../models/compte_model.dart';
 import '../app_helper.dart';
 import '../reports/compte_report.dart';
+import '../reports/grand_livre_report.dart';
 
 class EcritureesListScreen extends StatefulWidget {
   const EcritureesListScreen({super.key});
@@ -57,14 +58,16 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
 
     setState(() {
       _allItems = items;
-      _items = items;
       _charges = charges;
       _actifs = actifs;
       _years = years;
-      // reset filters
-      _selectedYear = null;
+      // preselect most recent year when available
+      _selectedYear = years.isNotEmpty ? years.first : null;
+      // reset other filters
       _selectedChargeId = null;
       _selectedActifId = null;
+      // apply initial year filter to displayed items
+      _items = _selectedYear != null ? _allItems.where((e) => e.date.year == _selectedYear).toList() : _allItems;
       _loading = false;
     });
   }
@@ -642,6 +645,64 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.book),
+              label: const Text('Grand livre'),
+              onPressed: () async {
+                // Require a selected year for the Grand Livre export
+                if (_selectedYear == null) {
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Erreur'),
+                      content: const Text('Veuillez sélectionner une année dans la barre d\'outils.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+                      ],
+                    ),
+                  );
+                  return;
+                }
+
+                // Always export entries filtered by the selected year (ignore other UI filters)
+                final itemsToExport = _allItems.where((e) => e.date.year == _selectedYear).toList();
+
+                if (itemsToExport.isEmpty) {
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Information'),
+                      content: const Text('Aucune écriture pour l\'année sélectionnée.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+                      ],
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  await exportGrandLivreReportPdfToFile(
+                    itemsToExport,
+                    _compteLabels,
+                    _compteNumeros,
+                    fileName: 'grand_livre_${_selectedYear}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+                  );
+                } catch (ex, st) {
+                  // ignore: avoid_print
+                  print('Erreur génération Grand Livre PDF: $ex\n$st');
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Erreur'),
+                      content: SingleChildScrollView(child: Text('Erreur lors de la génération du PDF:\n$ex\n\n$st')),
+                      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(width: 12),
             const Spacer(),
             Text(
               'Total: ${netTotal.toStringAsFixed(2)}',
