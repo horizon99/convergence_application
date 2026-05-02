@@ -145,7 +145,7 @@ class _PartieEditScreenState extends State<PartieEditScreen> {
                                   border: OutlineInputBorder(),
                                 ),
                               ),
-                              onChanged: (contact) {
+                              onSelected: (contact) {
                                 setState(() {
                                   _selectedContactId = contact?.id;
                                 });

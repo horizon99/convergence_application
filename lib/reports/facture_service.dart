@@ -43,6 +43,8 @@ class InvoiceData {
 }
 
 class FactureService {
+  static bool _isGeneratingPdf = false;
+
   Future<InvoiceData> getInvoiceData(
     int dossierId,
     DateTime dateDu,
@@ -172,132 +174,127 @@ class FactureService {
     required DateTime dateAu,
     required int idDossier,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    String dossierLibelle = 'Dossier $idDossier'; // TODO
-
-    // Generate selected PDFs
-    console.log('Début de la génération de la facture');
-
-    late final dynamic pwFacture;
-    pwFacture = await FactureReport().generate(idFacture);
-    final bytesFacture = await pwFacture.save();
-    final docFacture = sf.PdfDocument(inputBytes: bytesFacture);
-
-    console.log('Début de la génération de la part QR code');
-
-    late final dynamic pwQrCode;
-    late final dynamic bytesQrCode;
-    late final dynamic docQrCode;
-    if (afficherQrCode) {
-      final invoiceData = await FactureService().getInvoiceDataFromFacture(
-        idFacture,
-      );
-      pwQrCode = await generateQRBill(invoiceData, montantFacture);
-      bytesQrCode = pwQrCode;
-      docQrCode = sf.PdfDocument(inputBytes: bytesQrCode);
-    } else {
-      pwQrCode = null;
-      bytesQrCode = null;
-      docQrCode = null;
+    if (_isGeneratingPdf) {
+      throw Exception('Une generation PDF est deja en cours.');
     }
+    _isGeneratingPdf = true;
 
-    console.log('Début de la génération du relevé d\'activités');
+    sf.PdfDocument? docFacture;
+    sf.PdfDocument? docQrCode;
+    sf.PdfDocument? docReleve;
+    sf.PdfDocument? result;
 
-    late final dynamic pwReleve;
-    late final dynamic bytesReleve;
-    late final dynamic docReleve;
-    if (afficherReleveActivites) {
-      pwReleve = await ActivitesFacturablesReport().buildReleveActivitesPdf(
-        activites: activites,
-        dateDu: dateDu,
-        dateAu: dateAu,
-        dossierLibelle: dossierLibelle,
-        afficherFrais: afficherFrais,
-        afficherMontants: afficherMontants,
-      );
-      bytesReleve = await pwReleve.save();
-      docReleve = sf.PdfDocument(inputBytes: bytesReleve);
-    } else {
-      pwReleve = null;
-      bytesReleve = null;
-      docReleve = null;
-    }
+    try {
+      final String dossierLibelle = 'Dossier $idDossier'; // TODO
 
-    console.log(
-      'Les documents PDF ont été générés. Facture: ${pwFacture != null}, Relevé: ${pwReleve != null}',
-    );
+      // Generate selected PDFs
+      console.log('Debut de la generation de la facture');
 
-    late final result = sf.PdfDocument();
-    sf.PdfSection? section;
-
-    console.log(
-      'PDF fusionné généré : ${result.pages.count} pages avant fusion',
-    );
-
-    // Copy pages from first document using templates
-    if (afficherFacture) {
-      for (int i = 0; i < docFacture.pages.count; i++) {
-        final sf.PdfTemplate template = docFacture.pages[i].createTemplate();
-        if (section == null || section.pageSettings.size != template.size) {
-          section = result.sections!.add();
-          section.pageSettings.size = template.size;
-          section.pageSettings.margins.all = 0;
-        }
-
-        section.pages.add().graphics.drawPdfTemplate(
-          template,
-          const Offset(0, 0),
-        );
+      if (afficherFacture) {
+        final pwFacture = await FactureReport().generate(idFacture);
+        final bytesFacture = await pwFacture.save();
+        docFacture = sf.PdfDocument(inputBytes: bytesFacture);
       }
-      docFacture.dispose();
-      // Copy pages from third document (QR code)
+
+      console.log('Debut de la generation de la part QR code');
+
       if (afficherQrCode) {
+        final invoiceData = await getInvoiceDataFromFacture(idFacture);
+        final qrBytes = await generateQRBill(invoiceData, montantFacture);
+        if (qrBytes != null && qrBytes.isNotEmpty) {
+          docQrCode = sf.PdfDocument(inputBytes: qrBytes);
+        } else {
+          console.log('QR code PDF non genere (contenu invalide ou vide).');
+        }
+      }
+
+      console.log('Debut de la generation du releve d\'activites');
+
+      if (afficherReleveActivites) {
+        final pwReleve = await ActivitesFacturablesReport().buildReleveActivitesPdf(
+          activites: activites,
+          dateDu: dateDu,
+          dateAu: dateAu,
+          dossierLibelle: dossierLibelle,
+          afficherFrais: afficherFrais,
+          afficherMontants: afficherMontants,
+        );
+        final bytesReleve = await pwReleve.save();
+        docReleve = sf.PdfDocument(inputBytes: bytesReleve);
+      }
+
+      result = sf.PdfDocument();
+      sf.PdfSection? section;
+
+      console.log(
+        'PDF fusionne initialise: ${result.pages.count} pages avant fusion',
+      );
+
+      if (docFacture != null) {
+        for (int i = 0; i < docFacture.pages.count; i++) {
+          final sf.PdfTemplate template = docFacture.pages[i].createTemplate();
+          if (section == null || section.pageSettings.size != template.size) {
+            section = result.sections!.add();
+            section.pageSettings.size = template.size;
+            section.pageSettings.margins.all = 0;
+          }
+
+          section.pages.add().graphics.drawPdfTemplate(
+            template,
+            const Offset(0, 0),
+          );
+        }
+      }
+
+      if (docQrCode != null && docQrCode.pages.count > 0) {
         final sf.PdfTemplate template = docQrCode.pages[0].createTemplate();
-        if (section == null || section.pageSettings.size != template.size) {
+
+        if (result.pages.count == 0) {
           section = result.sections!.add();
           section.pageSettings.size = template.size;
           section.pageSettings.margins.all = 0;
+          section.pages.add().graphics.drawPdfTemplate(
+            template,
+            const Offset(0, 0),
+          );
+        } else {
+          result.pages[0].graphics.drawPdfTemplate(
+            template,
+            const Offset(0, 520),
+          );
         }
-
-        section.pages[0].graphics.drawPdfTemplate(
-          template,
-          const Offset(0, 520),
-        );
-        docQrCode.dispose();
       }
-    }
 
-    // Copy pages from second document
-    if (afficherReleveActivites) {
-      for (int i = 0; i < docReleve.pages.count; i++) {
-        final sf.PdfTemplate template = docReleve.pages[i].createTemplate();
-        if (section == null || section.pageSettings.size != template.size) {
-          section = result.sections!.add();
-          section.pageSettings.size = template.size;
-          section.pageSettings.margins.all = 0;
+      if (docReleve != null) {
+        for (int i = 0; i < docReleve.pages.count; i++) {
+          final sf.PdfTemplate template = docReleve.pages[i].createTemplate();
+          if (section == null || section.pageSettings.size != template.size) {
+            section = result.sections!.add();
+            section.pageSettings.size = template.size;
+            section.pageSettings.margins.all = 0;
+          }
+
+          section.pages.add().graphics.drawPdfTemplate(
+            template,
+            const Offset(0, 0),
+          );
         }
-
-        section.pages.add().graphics.drawPdfTemplate(
-          template,
-          const Offset(0, 0),
-        );
       }
-      docReleve.dispose();
-    }
 
-    final mergedBytes = await result.save();
+      if (result.pages.count == 0) {
+        throw Exception('Aucune page PDF n\'a pu etre generee.');
+      }
 
-    result.dispose();
+      final mergedBytes = await result.save();
 
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName =
-        'FA_${idDossier.toString()}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsBytes(mergedBytes);
-    await OpenFilex.open(file.path);
-    mergedBytes.clear();
-    console.log('PDF fusionné généré : ${file.path}');
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName =
+          'FA_${idDossier.toString()}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(mergedBytes, flush: true);
+
+      final openResult = await OpenFilex.open(file.path);
+      console.log('PDF fusionne genere : ${file.path} (${openResult.type})');
 
     //if (_preparerEmail) {
     //final invoiceData = await FactureService().getInvoiceDataFromFacture(widget.idFacture);
@@ -311,26 +308,23 @@ class FactureService {
     //    body: 'Je me permets de vous transmettre ci-joint ma facture relative aux récentes activités. N’hésitez pas à me contacter si vous avez des questions ou besoin de précisions supplémentaires.',
     //    attachmentPath: file.path);
     //}
-    return;
+      return;
+    } catch (e, st) {
+      console.log('Erreur generation PDF: $e\n$st');
+      rethrow;
+    } finally {
+      docFacture?.dispose();
+      docQrCode?.dispose();
+      docReleve?.dispose();
+      result?.dispose();
+      _isGeneratingPdf = false;
+    }
   }
 
   Future<Uint8List?> generateQRBill(
     InvoiceData invoiceData,
     double montantFacture,
   ) async {
-    // Fonts must be loaded to display properly in test outputs
-    final regularFont = File('assets/fonts/OpenSans-Regular.ttf')
-        .readAsBytes()
-        .then((bytes) => ByteData.view(Uint8List.fromList(bytes).buffer));
-    final boldFont = File('assets/fonts/OpenSans-Bold.ttf').readAsBytes().then(
-      (bytes) => ByteData.view(Uint8List.fromList(bytes).buffer),
-    );
-
-    final fontLoader = FontLoader('OpenSans')
-      ..addFont(regularFont)
-      ..addFont(boldFont);
-    await fontLoader.load();
-
     QRBill qrBill = QRBill();
     qrBill.setVersion(2.00);
     qrBill.setQrType("SPC");

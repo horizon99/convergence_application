@@ -122,34 +122,43 @@ class _FactureListScreenState extends State<FactureListScreen> {
                           ),
                           tooltip: 'GénérerPDF',
                           onPressed: () async {
-                            final res = await showDialog<FacturePrintResult?>(
-                              context: context,
-                              builder: (context) => FacturePrintDialog(),
-                            );
+                            try {
+                              final res = await showDialog<FacturePrintResult?>(
+                                context: context,
+                                builder: (context) => FacturePrintDialog(),
+                              );
 
-                            if (res != null && res.generated) {
-                              final activites =
-                                  await ActivitesFacturablesRepository()
-                                      .getActivitesFacturables(
-                                        f.idDossier,
-                                        dateDu: f.activitesDu ?? f.dateOp,
-                                        dateAu: f.activitesAu ?? f.dateOp,
-                                      );
+                              if (res != null && res.generated) {
+                                final activites =
+                                    await ActivitesFacturablesRepository()
+                                        .getActivitesFacturables(
+                                          f.idDossier,
+                                          dateDu: f.activitesDu ?? f.dateOp,
+                                          dateAu: f.activitesAu ?? f.dateOp,
+                                        );
 
-                              await FactureService().generateFacturePDF(
-                                {},
-                                idFacture: f.idFacture,
-                                afficherFacture: res.afficherFacture,
-                                afficherQrCode: res.afficherQrCode,
-                                afficherReleveActivites:
-                                    res.afficherReleveActivites,
-                                afficherFrais: res.afficherFrais,
-                                afficherMontants: res.afficherMontants,
-                                montantFacture: f.montantFacture,
-                                activites: activites,
-                                dateDu: f.activitesDu ?? f.dateOp,
-                                dateAu: f.activitesAu ?? f.dateOp,
-                                idDossier: f.idDossier,
+                                await FactureService().generateFacturePDF(
+                                  {},
+                                  idFacture: f.idFacture,
+                                  afficherFacture: res.afficherFacture,
+                                  afficherQrCode: res.afficherQrCode,
+                                  afficherReleveActivites:
+                                      res.afficherReleveActivites,
+                                  afficherFrais: res.afficherFrais,
+                                  afficherMontants: res.afficherMontants,
+                                  montantFacture: f.montantFacture,
+                                  activites: activites,
+                                  dateDu: f.activitesDu ?? f.dateOp,
+                                  dateAu: f.activitesAu ?? f.dateOp,
+                                  idDossier: f.idDossier,
+                                );
+                              }
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Echec generation PDF: $e'),
+                                ),
                               );
                             }
                           },

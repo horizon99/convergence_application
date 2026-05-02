@@ -24,12 +24,12 @@ class FactureReport {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        header: (context) => _buildHeader(invoiceData, logoImage),
         build: (context) => [
           _buildTitle(invoiceData, factureRecord!),
           _buildInvoice(invoiceData, factureRecord),
           _buildTotal(invoiceData, factureRecord),
         ],
+        header: (context) => _buildHeader(invoiceData, logoImage),
         footer: (context) => _buildFooter(invoiceData, factureRecord!),
       ),
     );
@@ -45,36 +45,50 @@ class FactureReport {
   }
 
   pw.Widget _buildHeader(InvoiceData data, pw.ImageProvider? logo) {
+    // TODO: remettre un SizedBox pour le logo et le bloc d'en-tête.
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              data.mediateur.nom ?? '',
-              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.Text(
-              data.mediateur.factureAdresse ?? '',
-              style: pw.TextStyle(fontSize: 10),
-            ),
-            pw.Text(
-              '${data.mediateur.factureNoPostal} ${data.mediateur.factureLocalite}',
-              style: pw.TextStyle(fontSize: 10),
-            ),
-            pw.Text(
-              data.mediateur.telephone ?? '',
-              style: pw.TextStyle(fontSize: 10),
-            ),
-            pw.Text(
-              data.mediateur.email ?? '',
-              style: pw.TextStyle(fontSize: 10),
-            ),
-          ],
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                data.mediateur.nom ?? '',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.Text(
+                data.mediateur.factureAdresse ?? '',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+              pw.Text(
+                '${data.mediateur.factureNoPostal} ${data.mediateur.factureLocalite}',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+              pw.Text(
+                data.mediateur.telephone ?? '',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+              pw.Text(
+                data.mediateur.email ?? '',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+            ],
+          ),
         ),
-        if (logo != null) pw.Image(logo, width: 150, height: 75),
+        if (logo != null)
+          pw.SizedBox(
+            width: data.mediateur.logoW?.toDouble() ?? 150,
+            height: data.mediateur.logoH?.toDouble() ?? 75,
+            child: pw.Image(
+              logo,
+              fit: pw.BoxFit.contain,
+            ),
+          ),
       ],
     );
   }

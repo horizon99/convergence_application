@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../data/database/database_helper.dart';
+import 'database_open_screen.dart';
 import 'mediateur_edit_screen.dart';
 import 'tarif_edit_screen.dart';
 import 'comptes_list_screen.dart';
@@ -60,6 +62,20 @@ class ParametresListScreen extends StatelessWidget {
             },
             icon: const Icon(Icons.tune),
             label: const Text('Autres paramètres'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await DatabaseHelper.instance.closeDatabase();
+              if (!context.mounted) return;
+
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const DatabaseOpenScreen()),
+                (route) => false,
+              );
+            },
+            icon: const Icon(Icons.folder_open),
+            label: const Text('Ouvrir une autre base SQLite'),
           ),
         ],
       ),
