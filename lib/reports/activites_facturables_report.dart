@@ -221,9 +221,24 @@ class ActivitesFacturablesReport {
                 child: pw.Row(
                   mainAxisSize: pw.MainAxisSize.min,
                   children: [
+                    if (afficherMontants == false)
+                      pw.SizedBox(width: 10),
+                      pw.Container(
+                        width: 70,
+                        child: pw.Text(
+                          'Total: ${totalMinutesGroupe.toStringAsFixed(0)} min.',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    pw.SizedBox(width: 10),
                     if (afficherMontants)
                       pw.Text(
-                        '(${totalMinutesGroupe.toStringAsFixed(0)} minutes à CHF ${tarifHoraire.toStringAsFixed(2)}/h)',
+                        '(${totalMinutesGroupe.toStringAsFixed(0)} min. à CHF ${tarifHoraire.toStringAsFixed(2)}/h)',
+                        textAlign: pw.TextAlign.right,
                         style: pw.TextStyle(
                           fontSize: 10,
                           fontWeight: pw.FontWeight.bold,
@@ -234,7 +249,7 @@ class ActivitesFacturablesReport {
                       pw.Container(
                         width: 70,
                         child: pw.Text(
-                          'CHF ${montantFormat.format(totalFraisGroupe)}',
+                          'Frais CHF ${montantFormat.format(totalFraisGroupe)}',
                           textAlign: pw.TextAlign.right,
                           style: pw.TextStyle(
                             fontSize: 10,

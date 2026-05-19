@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:ui' as ui;
 import 'qr_bill.dart';
@@ -39,7 +40,7 @@ class BillGenerator {
   static const _height = 500.0;
   static const _margin = 10.0;
   static const _qrRatio = 0.2;
-  static const _panelRatio = 0.3;
+  static const _panelRatio = 0.3; // Portion du récépissé (gauche) par rapport à la facture
   static const _majorGap = 10.0;
   static const _minorGap = 0.0;
   // static const _width = 1000.0;
@@ -166,9 +167,18 @@ class BillGenerator {
       Uint8List? image = await getBinary(qrBill);
       if (image != null) {
         validBills++;
-        pdf.addPage(pw.Page(build: (pw.Context context) {
-          return pw.Image(pw.MemoryImage(image)); // Center
-        }));
+        pdf.addPage(pw.Page(
+          margin: pw.EdgeInsets.only(left: 0, top: 20, right: 0, bottom: 0),
+          build: (pw.Context context) {
+            return pw.Column(
+              children: [
+                pw.SizedBox(height: 0.5 * PdfPageFormat.mm),
+                pw.Image(pw.MemoryImage(image)),
+              ],
+            );
+          },
+          //pageFormat: PdfPageFormat(_width, _height),
+        ));
       }
     }
     return validBills == 0 ? null : await pdf.save();

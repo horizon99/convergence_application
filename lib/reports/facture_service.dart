@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as console;
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
@@ -30,6 +31,9 @@ class InvoiceData {
   final List<FactureContenu> content;
   final DateTime? dateDu;
   final DateTime? dateAu;
+  final String? dossierLibelle;
+  final int? idFacture;
+  final DateTime? dateFacture;
 
   InvoiceData({
     required this.dossier,
@@ -39,6 +43,9 @@ class InvoiceData {
     required this.content,
     this.dateDu,
     this.dateAu,
+    this.dossierLibelle,
+    this.idFacture,
+    this.dateFacture,
   });
 }
 
@@ -84,6 +91,7 @@ class FactureService {
       content: content,
       dateDu: dateDu,
       dateAu: dateAu,
+      dossierLibelle: dossier.libelleClient,
     );
   }
 
@@ -158,6 +166,9 @@ class FactureService {
       content: content,
       dateDu: facture.activitesDu,
       dateAu: facture.activiteAu,
+      dossierLibelle: dossier.libelleClient,
+      idFacture: facture.idFacture,
+      dateFacture: facture.dateOp,
     );
   }
 
@@ -169,9 +180,6 @@ class FactureService {
     required bool afficherFrais,
     required bool afficherMontants,
     required double montantFacture,
-    required List<ActiviteFacturable> activites,
-    required DateTime dateDu,
-    required DateTime dateAu,
     required int idDossier,
   }) async {
     if (_isGeneratingPdf) {
@@ -185,7 +193,9 @@ class FactureService {
     sf.PdfDocument? result;
 
     try {
-      final String dossierLibelle = 'Dossier $idDossier'; // TODO
+
+      final invoiceData = await getInvoiceDataFromFacture(idFacture);
+      final String dossierLibelleComplet = 'Dossier: $idDossier - ${invoiceData.dossierLibelle ?? 'Dossier ${invoiceData.dossier.id}'}';
 
       // Generate selected PDFs
       console.log('Debut de la generation de la facture');
@@ -199,7 +209,6 @@ class FactureService {
       console.log('Debut de la generation de la part QR code');
 
       if (afficherQrCode) {
-        final invoiceData = await getInvoiceDataFromFacture(idFacture);
         final qrBytes = await generateQRBill(invoiceData, montantFacture);
         if (qrBytes != null && qrBytes.isNotEmpty) {
           docQrCode = sf.PdfDocument(inputBytes: qrBytes);
@@ -212,10 +221,10 @@ class FactureService {
 
       if (afficherReleveActivites) {
         final pwReleve = await ActivitesFacturablesReport().buildReleveActivitesPdf(
-          activites: activites,
-          dateDu: dateDu,
-          dateAu: dateAu,
-          dossierLibelle: dossierLibelle,
+          activites: invoiceData.activities,
+          dateDu: invoiceData.dateDu ?? DateTime.now(),
+          dateAu: invoiceData.dateAu ?? DateTime.now(),
+          dossierLibelle: dossierLibelleComplet,
           afficherFrais: afficherFrais,
           afficherMontants: afficherMontants,
         );
@@ -289,9 +298,20 @@ class FactureService {
 
       final directory = await getApplicationDocumentsDirectory();
       final fileName =
-          'FA_${idDossier.toString()}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          //'FA_${idDossier.toString()}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          'FA_${DateFormat('yyyy').format(invoiceData.dateFacture!)}_${invoiceData.dossier.id}_${invoiceData.idFacture}.pdf';
       final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(mergedBytes, flush: true);
+      try {
+        await file.writeAsBytes(mergedBytes, flush: true);
+      } on FileSystemException catch (e, st) {
+        final reason = e.osError?.message ?? e.message;
+        console.log(
+          'Echec ecriture PDF (${file.path}) : $reason\n$st',
+        );
+        throw Exception(
+          'Impossible d\'ecrire le fichier PDF. Verifiez le chemin d\'acces et que le fichier n\'est pas deja utilise par une autre application.',
+        );
+      }
 
       final openResult = await OpenFilex.open(file.path);
       console.log('PDF fusionne genere : ${file.path} (${openResult.type})');
@@ -351,7 +371,11 @@ class FactureService {
     );
     qrBill.setAmount(montantFacture);
     qrBill.setReference(QRBill.refTypeNON);
-    qrBill.setAdditionalInfo("test");
+    final factureDateString = invoiceData.dateFacture != null
+      ? DateFormat('yyyy').format(invoiceData.dateFacture!)
+      : '';
+    final factureIdString = '${invoiceData.dossier.id}/${invoiceData.idFacture?.toString() ?? ''}';
+    qrBill.setAdditionalInfo('FA$factureDateString/$factureIdString');
     //bool isValid = qrBill.isValid();
     //console.log('QR Bill is valid: $isValid');
 

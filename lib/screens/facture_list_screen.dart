@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../data/repositories/facture_repository.dart';
-import '../data/repositories/activites_facturables_repository.dart';
 import '../data/repositories/dossier_repository.dart';
 import '../data/repositories/parties_repository.dart';
 import '../models/facture_model.dart';
@@ -129,14 +128,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
                               );
 
                               if (res != null && res.generated) {
-                                final activites =
-                                    await ActivitesFacturablesRepository()
-                                        .getActivitesFacturables(
-                                          f.idDossier,
-                                          dateDu: f.activitesDu ?? f.dateOp,
-                                          dateAu: f.activitesAu ?? f.dateOp,
-                                        );
-
                                 await FactureService().generateFacturePDF(
                                   {},
                                   idFacture: f.idFacture,
@@ -147,9 +138,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
                                   afficherFrais: res.afficherFrais,
                                   afficherMontants: res.afficherMontants,
                                   montantFacture: f.montantFacture,
-                                  activites: activites,
-                                  dateDu: f.activitesDu ?? f.dateOp,
-                                  dateAu: f.activitesAu ?? f.dateOp,
                                   idDossier: f.idDossier,
                                 );
                               }

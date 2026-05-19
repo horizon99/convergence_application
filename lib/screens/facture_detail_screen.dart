@@ -32,6 +32,8 @@ class FacturePrepare extends StatefulWidget {
 
 class _FacturePrepareState extends State<FacturePrepare> {
   DateTime _dateOp = DateTime.now();
+  DateTime _activitesDu = DateTime.now();
+  DateTime _activitesAu = DateTime.now();
   int? _selectedClientId;
   //double _participation = 1.0;
   String _titre = 'FACTURE';
@@ -70,6 +72,8 @@ class _FacturePrepareState extends State<FacturePrepare> {
       _contenu = contenu;
       _calculateTotals();
       _participationController.text = '100';
+      _activitesDu = widget.dateDu;
+      _activitesAu = widget.dateAu;
       _libelle =
           mediateur.factureLibelle ??
           'Je me permets de vous facturer mes honoraires comme suit:';
@@ -82,6 +86,8 @@ class _FacturePrepareState extends State<FacturePrepare> {
       final f = widget.facture!;
       setState(() {
         _dateOp = f.dateOp;
+        _activitesDu = f.activitesDu ?? widget.dateDu;
+        _activitesAu = f.activiteAu ?? widget.dateAu;
         _selectedClientId = f.contactID;
         _titre = f.titre ?? _titre;
         _libelle = f.libelle ?? _libelle;
@@ -160,8 +166,8 @@ class _FacturePrepareState extends State<FacturePrepare> {
       total: _grandTotal,
       participation: _montantParticipation,
       tauxParticipation: int.tryParse(_participationController.text) ?? 100,
-      activitesDu: widget.dateDu,
-      activiteAu: widget.dateAu,
+      activitesDu: _activitesDu,
+      activiteAu: _activitesAu,
       paye: _paye ?? false,
     );
     int? idInserted = facture.idFacture;
@@ -177,14 +183,6 @@ class _FacturePrepareState extends State<FacturePrepare> {
         // Save facture to get an ID for PDF generation
         idInserted = await FactureRepository().insertFacture(facture);
 
-        // Fetch activities again to ensure we have the latest data for PDF
-        final activites = await ActivitesFacturablesRepository()
-            .getActivitesFacturables(
-              facture.dossierID,
-              dateDu: facture.activitesDu ?? facture.dateOp,
-              dateAu: facture.activiteAu ?? facture.dateOp,
-            );
-
         // Generate PDF with the specified options
         if (res.afficherFacture == true || res.afficherReleveActivites == true) {
           await FactureService().generateFacturePDF(
@@ -196,9 +194,6 @@ class _FacturePrepareState extends State<FacturePrepare> {
             afficherFrais: res.afficherFrais,
             afficherMontants: res.afficherMontants,
             montantFacture: facture.participation ?? 0.0,
-            activites: activites,
-            dateDu: facture.activitesDu ?? facture.dateOp,
-            dateAu: facture.activiteAu ?? facture.dateOp,
             idDossier: facture.dossierID,
           );
         }
@@ -339,6 +334,49 @@ class _FacturePrepareState extends State<FacturePrepare> {
                 fillColor: Colors.yellow[50],
               ),
               onChanged: (v) => setState(() => _libelle = v),
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Flexible(
+                  child: InkWell(
+                    onTap: () => _pickDate(
+                      initial: _activitesDu,
+                      onPicked: (d) => setState(() => _activitesDu = d),
+                    ),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Activités du',
+                        filled: true,
+                        fillColor: Colors.yellow[50],
+                      ),
+                      child: Text(
+                        DateFormat('dd.MM.yyyy').format(_activitesDu),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: InkWell(
+                    onTap: () => _pickDate(
+                      initial: _activitesAu,
+                      onPicked: (d) => setState(() => _activitesAu = d),
+                    ),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Activités au',
+                        filled: true,
+                        fillColor: Colors.yellow[50],
+                      ),
+                      child: Text(
+                        DateFormat('dd.MM.yyyy').format(_activitesAu),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 

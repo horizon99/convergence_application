@@ -39,6 +39,8 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
   final TextEditingController _enTeteRapportController =
       TextEditingController();
   final TextEditingController _enTetePapierController = TextEditingController();
+  final TextEditingController _enTetePapierXController = TextEditingController();
+  final TextEditingController _enTetePapierYController = TextEditingController();
   final TextEditingController _logoXController = TextEditingController();
   final TextEditingController _logoYController = TextEditingController();
   final TextEditingController _logoWController = TextEditingController();
@@ -74,6 +76,8 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
       _factureConditionsController.text = m.factureConditions ?? '';
       _enTeteRapportController.text = m.enTeteRapport ?? '';
       _enTetePapierController.text = m.enTetePapier ?? '';
+      _enTetePapierXController.text = m.enTetePapierX?.toString() ?? '';
+      _enTetePapierYController.text = m.enTetePapierY?.toString() ?? '';
       _logoData = m.logo;
       _logoXController.text = m.logoX?.toString() ?? '';
       _logoYController.text = m.logoY?.toString() ?? '';
@@ -101,6 +105,8 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
     _factureConditionsController.dispose();
     _enTeteRapportController.dispose();
     _enTetePapierController.dispose();
+    _enTetePapierXController.dispose();
+    _enTetePapierYController.dispose();
     _logoXController.dispose();
     _logoYController.dispose();
     _logoWController.dispose();
@@ -139,6 +145,12 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
       enTetePapier: _enTetePapierController.text.trim().isEmpty
           ? null
           : _enTetePapierController.text.trim(),
+      enTetePapierX: _enTetePapierXController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_enTetePapierXController.text.trim()),
+      enTetePapierY: _enTetePapierYController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_enTetePapierYController.text.trim()),
       factureAdresse: _factureAdresseController.text.trim().isEmpty
           ? null
           : _factureAdresseController.text.trim(),
@@ -210,6 +222,8 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
       _logoYController.text = '';
       _logoWController.text = '';
       _logoHController.text = '';
+      _enTetePapierXController.text = '';
+      _enTetePapierYController.text = ''; 
     });
   }
 
@@ -256,6 +270,25 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                           decoration: const InputDecoration(
                             labelText: 'En-tête du rapport',
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _enTetePapierXController,
+                          decoration: const InputDecoration(labelText: 'Position en-tête papier X (cm)'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _enTetePapierYController,
+                          decoration: const InputDecoration(labelText: 'Position en-tête papier Y (cm)'),
                         ),
                       ),
                     ],
@@ -372,7 +405,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _logoXController,
-                                    decoration: const InputDecoration(labelText: 'LogoX'),
+                                    decoration: const InputDecoration(labelText: 'Position logo X (cm)'),
                                     keyboardType: TextInputType.number,
                                   ),
                                 ),
@@ -380,7 +413,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _logoYController,
-                                    decoration: const InputDecoration(labelText: 'LogoY'),
+                                    decoration: const InputDecoration(labelText: 'Position logo Y (cm)'),
                                     keyboardType: TextInputType.number,
                                   ),
                                 ),
@@ -388,7 +421,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _logoWController,
-                                    decoration: const InputDecoration(labelText: 'LogoW'),
+                                    decoration: const InputDecoration(labelText: 'Largeur logo (cm)'),
                                     keyboardType: TextInputType.number,
                                   ),
                                 ),
@@ -396,7 +429,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _logoHController,
-                                    decoration: const InputDecoration(labelText: 'LogoH'),
+                                    decoration: const InputDecoration(labelText: 'Hauteur logo (cm)'),
                                     keyboardType: TextInputType.number,
                                   ),
                                 ),

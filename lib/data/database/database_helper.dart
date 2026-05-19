@@ -68,6 +68,8 @@ class DatabaseHelper {
         'logo_y': 'INTEGER',
         'logo_w': 'INTEGER',
         'logo_h': 'INTEGER',
+        'en_tete_papier_x': 'INTEGER',
+        'en_tete_papier_y': 'INTEGER',
       },
     );
   }

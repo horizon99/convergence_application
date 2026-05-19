@@ -14,6 +14,8 @@ class Mediateur {
   final int? logoW;
   final int? logoH;
   final String? enTetePapier;
+  final int? enTetePapierX;
+  final int? enTetePapierY;
   final String? factureAdresse;
   final String? factureNoRue;
   final String? factureNoPostal;
@@ -38,6 +40,8 @@ class Mediateur {
     this.logoW,
     this.logoH,
     this.enTetePapier,
+    this.enTetePapierX,
+    this.enTetePapierY,
     this.factureAdresse,
     this.factureNoRue,
     this.factureNoPostal,
@@ -64,6 +68,8 @@ class Mediateur {
       logoW: map['logo_w'],
       logoH: map['logo_h'],
       enTetePapier: map['en_tete_papier'],
+      enTetePapierX: map['en_tete_papier_x'],
+      enTetePapierY: map['en_tete_papier_y'],
       factureAdresse: map['facture_adresse'],
       factureNoRue: map['facture_no_rue'],
       factureNoPostal: map['facture_no_postal'],
@@ -90,6 +96,8 @@ class Mediateur {
       'logo_w': logoW,
       'logo_h': logoH,
       'en_tete_papier': enTetePapier,
+      'en_tete_papier_x': enTetePapierX,
+      'en_tete_papier_y': enTetePapierY,
       'facture_adresse': factureAdresse,
       'facture_no_rue': factureNoRue,
       'facture_no_postal': factureNoPostal,

@@ -23,14 +23,67 @@ class FactureReport {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
+        pageTheme: pw.PageTheme(
+          pageFormat: PdfPageFormat.a4,
+          margin: pw.EdgeInsets.all(0),
+          buildBackground: (context) {
+            return pw.Stack(
+              children: [
+                // Bloc coordonnées médiateur
+                pw.Positioned(
+                  left: (invoiceData.mediateur.enTetePapierX?.toDouble() ?? 1) * PdfPageFormat.cm,
+                  top: (invoiceData.mediateur.enTetePapierY?.toDouble() ?? 1) * PdfPageFormat.cm,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        invoiceData.mediateur.nom ?? '',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        invoiceData.mediateur.factureAdresse ?? '',
+                        style: pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.Text(
+                        '${invoiceData.mediateur.factureNoPostal} ${invoiceData.mediateur.factureLocalite}',
+                        style: pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.Text(
+                        invoiceData.mediateur.telephone ?? '',
+                        style: pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.Text(
+                        invoiceData.mediateur.email ?? '',
+                        style: pw.TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                // Logo
+                if (logoImage != null)
+                  pw.Positioned(
+                    left: (invoiceData.mediateur.logoX?.toDouble() ?? 2) * PdfPageFormat.cm,
+                    top: (invoiceData.mediateur.logoY?.toDouble() ?? 2) * PdfPageFormat.cm,
+                    child: pw.SizedBox(
+                      width: (invoiceData.mediateur.logoW?.toDouble() ?? 10) * PdfPageFormat.cm,
+                      height: (invoiceData.mediateur.logoH?.toDouble() ?? 5) * PdfPageFormat.cm,
+                      child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
         build: (context) => [
           _buildTitle(invoiceData, factureRecord!),
           _buildInvoice(invoiceData, factureRecord),
           _buildTotal(invoiceData, factureRecord),
+          _buildFooter(invoiceData, factureRecord),
         ],
-        header: (context) => _buildHeader(invoiceData, logoImage),
-        footer: (context) => _buildFooter(invoiceData, factureRecord!),
+        //footer: (context) => _buildFooter(invoiceData, factureRecord!),
       ),
     );
 
@@ -43,71 +96,26 @@ class FactureReport {
     //OpenFilex.open(file.path);
     return pdf;
   }
-
-  pw.Widget _buildHeader(InvoiceData data, pw.ImageProvider? logo) {
-    // TODO: remettre un SizedBox pour le logo et le bloc d'en-tête.
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Expanded(
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                data.mediateur.nom ?? '',
-                style: pw.TextStyle(
-                  fontSize: 12,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                data.mediateur.factureAdresse ?? '',
-                style: pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                '${data.mediateur.factureNoPostal} ${data.mediateur.factureLocalite}',
-                style: pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                data.mediateur.telephone ?? '',
-                style: pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                data.mediateur.email ?? '',
-                style: pw.TextStyle(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-        if (logo != null)
-          pw.SizedBox(
-            width: data.mediateur.logoW?.toDouble() ?? 150,
-            height: data.mediateur.logoH?.toDouble() ?? 75,
-            child: pw.Image(
-              logo,
-              fit: pw.BoxFit.contain,
-            ),
-          ),
-      ],
-    );
-  }
-
-  pw.Widget _buildTitle(InvoiceData data, Facture factureRecord) {
+    pw.Widget _buildTitle(InvoiceData data, Facture factureRecord) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.SizedBox(height: 2 * PdfPageFormat.cm),
+        pw.SizedBox(height: 1.25 * PdfPageFormat.cm),
 
-        // Client address block shifted 9 cm to the right
+        // Client address block shifted 10 cm to the right
         pw.Padding(
           padding: pw.EdgeInsets.only(
-            left: 9 * PdfPageFormat.cm,
-            top: -2 * PdfPageFormat.cm,
+            left: 11 * PdfPageFormat.cm,
+            top: 2 * PdfPageFormat.cm,
           ),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
+              pw.Text(
+                '${data.mediateur.localite} ${DateFormat('d MMMM yyyy', 'fr').format(factureRecord.dateOp)}',
+                style: pw.TextStyle(fontSize: 12),
+              ),
+              pw.SizedBox(height: 1 * PdfPageFormat.cm),
               if (data.client.titre != null && data.client.titre!.isNotEmpty)
                 pw.Text(
                   '${data.client.titre}',
@@ -131,57 +139,71 @@ class FactureReport {
                 '${data.client.noPostal} ${data.client.localite}',
                 style: pw.TextStyle(fontSize: 12),
               ),
-              pw.SizedBox(height: 1.5 * PdfPageFormat.cm),
-              pw.Text(
-                '${data.mediateur.localite} ${DateFormat('d MMMM yyyy', 'fr').format(factureRecord.dateOp)}',
-                style: pw.TextStyle(fontSize: 12),
-              ),
             ],
+          ),
+        ),
+
+        pw.SizedBox(height: 1 * PdfPageFormat.cm),
+
+        pw.Padding(
+          padding: pw.EdgeInsets.only(left: 1 * PdfPageFormat.cm),
+          child: pw.Text(
+            '${factureRecord.titre ?? 'FACTURE'} N° ${DateFormat('yyyy', 'fr').format(factureRecord.dateOp)}/${factureRecord.dossierID}/${factureRecord.idFacture}',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
         ),
 
         pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
 
-        pw.Text(
-          factureRecord.titre ?? 'Facture',
-          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
-        ),
-
-        pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
-
-        pw.RichText(
+                pw.Padding(
+          padding: pw.EdgeInsets.only(left: 1 * PdfPageFormat.cm),
+          child:
+          pw.RichText(
           text: pw.TextSpan(
             children: [
               pw.TextSpan(
                 text: 'Concerne: ',
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.normal,
-                  fontSize: 12,
+                  fontSize: 11,
                 ),
               ),
-              pw.TextSpan(text: data.dossier.libelleClient),
+              pw.TextSpan(
+                text: data.dossier.libelleClient,
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.normal,
+                  fontSize: 11,
+                ),
+              ),
             ],
           ),
+        ),
         ),
 
         pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
 
         if (factureRecord.libelle != null && factureRecord.libelle!.isNotEmpty)
-          pw.Text(
+        pw.Padding(
+          padding: pw.EdgeInsets.only(left: 1 * PdfPageFormat.cm),
+          child:          pw.Text(
             factureRecord.libelle!,
-            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.normal),
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.normal),
           ),
+        ),
 
         pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
 
-        pw.Text(
-          'Période du ${data.dateDu != null ? DateFormat('dd.MM.yyyy').format(data.dateDu!) : '-'} au ${data.dateAu != null ? DateFormat('dd.MM.yyyy').format(data.dateAu!) : '-'}',
-          style: pw.TextStyle(
-            fontSize: 12,
+        pw.Padding(
+          padding: pw.EdgeInsets.only(left: 1 * PdfPageFormat.cm),
+          child: pw.Text(
+            'Période du ${data.dateDu != null ? DateFormat('dd.MM.yyyy').format(data.dateDu!) : '-'} au ${data.dateAu != null ? DateFormat('dd.MM.yyyy').format(data.dateAu!) : '-'}',
+            style: pw.TextStyle(
+              fontSize: 11,
             fontWeight: pw.FontWeight.normal,
             fontStyle: pw.FontStyle.italic,
           ),
         ),
+        )
       ],
     );
   }
@@ -273,10 +295,16 @@ class FactureReport {
       );
     }).toList();
 
-    return pw.Table(
-      border: pw.TableBorder.all(),
-      columnWidths: columnWidths,
-      children: [headerRow, ...dataRows, footerRow],
+    return pw.Padding(
+      padding: pw.EdgeInsets.only(
+        left: 1 * PdfPageFormat.cm,
+        right: 1 * PdfPageFormat.cm,
+      ),
+      child: pw.Table(
+        border: pw.TableBorder.all(),
+        columnWidths: columnWidths,
+        children: [headerRow, ...dataRows, footerRow],
+      ),
     );
   }
 
@@ -292,51 +320,57 @@ class FactureReport {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
-          pw.SizedBox(height: 1 * PdfPageFormat.cm),
+          pw.SizedBox(height: 0.15 * PdfPageFormat.cm),
           // if (data.dossier.tva != null && data.dossier.tva! > 0) le jour on met la tva
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
-            children: [
-              pw.Text(
-                'Total honoraires et frais: ',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 12,
+          pw.Padding(
+            padding: pw.EdgeInsets.only(right: 1 * PdfPageFormat.cm),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Text(
+                  'Total honoraires et frais: ',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              pw.Text(
-                NumberFormat.currency(
-                  symbol: 'CHF ',
-                ).format(factureRecord.total),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 12,
+                pw.Text(
+                  NumberFormat.currency(
+                    symbol: 'CHF ',
+                  ).format(factureRecord.total),
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (factureRecord.tauxParticipation! > 0)
-            pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
-            children: [
-              pw.Text(
-                'Part ${factureRecord.tauxParticipation}% à votre charge: ',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 12,
+            pw.SizedBox(height: 0.15 * PdfPageFormat.cm),
+          pw.Padding(
+            padding: pw.EdgeInsets.only(right: 1 * PdfPageFormat.cm),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Text(
+                  'Part ${factureRecord.tauxParticipation}% à votre charge: ',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              pw.Text(
-                NumberFormat.currency(
-                  symbol: 'CHF ',
-                ).format(factureRecord.participation),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 12,
+                pw.Text(
+                  NumberFormat.currency(
+                    symbol: 'CHF ',
+                  ).format(factureRecord.participation),
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -347,11 +381,14 @@ class FactureReport {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Divider(),
         pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
-        pw.Text(
-          factureRecord.conditions ??
-              'Facture payable net à 30 jours, avec mes remerciements.',
+        pw.Padding(
+          padding: pw.EdgeInsets.symmetric(horizontal: 1 * PdfPageFormat.cm),
+          child: pw.Text(
+            factureRecord.conditions ??
+                'Facture payable net à 30 jours, avec mes remerciements.',
+            style: pw.TextStyle(fontSize: 11, fontStyle: pw.FontStyle.italic),
+          ),
         ),
         //pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
         //pw.Text('IBAN: ${data.mediateur.iban ?? ''}'),
