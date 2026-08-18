@@ -25,6 +25,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
   final TextEditingController _telephoneController = TextEditingController();
   final TextEditingController _ibanController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _id_tvaController = TextEditingController();
   final TextEditingController _factureAdresseController =
       TextEditingController();
   final TextEditingController _factureNoRueController = TextEditingController();
@@ -68,6 +69,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
       _telephoneController.text = m.telephone ?? '';
       _ibanController.text = m.iban ?? '';
       _emailController.text = m.email ?? '';
+      _id_tvaController.text = m.id_tva ?? '';
       _factureAdresseController.text = m.factureAdresse ?? '';
       _factureNoRueController.text = m.factureNoRue ?? '';
       _factureNoPostalController.text = m.factureNoPostal ?? '';
@@ -97,6 +99,7 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
     _telephoneController.dispose();
     _ibanController.dispose();
     _emailController.dispose();
+    _id_tvaController.dispose();
     _factureAdresseController.dispose();
     _factureNoRueController.dispose();
     _factureNoPostalController.dispose();
@@ -132,25 +135,25 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
         logo: _logoData,
         logoX: _logoXController.text.trim().isEmpty
           ? null
-          : int.tryParse(_logoXController.text.trim()),
+          : double.tryParse(_logoXController.text.trim()),
         logoY: _logoYController.text.trim().isEmpty
           ? null
-          : int.tryParse(_logoYController.text.trim()),
+          : double.tryParse(_logoYController.text.trim()),
         logoW: _logoWController.text.trim().isEmpty
           ? null
-          : int.tryParse(_logoWController.text.trim()),
+          : double.tryParse(_logoWController.text.trim()),
         logoH: _logoHController.text.trim().isEmpty
           ? null
-          : int.tryParse(_logoHController.text.trim()),
+          : double.tryParse(_logoHController.text.trim()),
       enTetePapier: _enTetePapierController.text.trim().isEmpty
           ? null
           : _enTetePapierController.text.trim(),
       enTetePapierX: _enTetePapierXController.text.trim().isEmpty
           ? null
-          : int.tryParse(_enTetePapierXController.text.trim()),
+          : double.tryParse(_enTetePapierXController.text.trim()),
       enTetePapierY: _enTetePapierYController.text.trim().isEmpty
           ? null
-          : int.tryParse(_enTetePapierYController.text.trim()),
+          : double.tryParse(_enTetePapierYController.text.trim()),
       factureAdresse: _factureAdresseController.text.trim().isEmpty
           ? null
           : _factureAdresseController.text.trim(),
@@ -178,6 +181,9 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
       email: _emailController.text.trim().isEmpty
           ? null
           : _emailController.text.trim(),
+      id_tva: _id_tvaController.text.trim().isEmpty
+          ? null
+          : _id_tvaController.text.trim(),
     );
 
     final rows = await _repo.updateMediateur(updated);
@@ -302,7 +308,11 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                           controller: _adresseController,
                           decoration: const InputDecoration(
                             labelText: 'Adresse du papier à en-tête',
+                            alignLabelWithHint: true,
                           ),
+                          keyboardType: TextInputType.multiline,
+                          minLines: 3,
+                          maxLines: null,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -322,6 +332,15 @@ class _MediateurEditScreenState extends State<MediateurEditScreen> {
                           title: const Text('Soumis TVA'),
                           controlAffinity: ListTileControlAffinity.leading,
                           contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _id_tvaController,
+                          decoration: const InputDecoration(
+                            labelText: 'ID TVA',
+                          ),
                         ),
                       ),
                     ],

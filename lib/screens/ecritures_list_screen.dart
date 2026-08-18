@@ -585,6 +585,7 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columns: const [
+                        DataColumn(label: SizedBox.shrink()),
                         DataColumn(label: Text('Date')),
                         DataColumn(label: Text('Compte A/P')),
                         DataColumn(label: Text('Compte C/P')),
@@ -592,12 +593,35 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
                         DataColumn(label: Text('Libellé')),
                         DataColumn(label: Text('Montant')),
                         DataColumn(label: Text('Facture')),
-                        DataColumn(label: Text('Actions')),
                       ],
                       rows: _items
                           .map(
                             (e) => DataRow(
                               cells: [
+                                DataCell(
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.blue,
+                                          size: 18,
+                                        ),
+                                        onPressed: () => _edit(e),
+                                        tooltip: 'Éditer',
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                          size: 18,
+                                        ),
+                                        onPressed: () => _delete(e),
+                                        tooltip: 'Supprimer',
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 DataCell(Text(_formatDate(e.date))),
                                 DataCell(
                                   Text(
@@ -615,22 +639,6 @@ class _EcritureesListScreenState extends State<EcritureesListScreen> {
                                 DataCell(Text(e.description ?? '')),
                                 DataCell(Text(e.montant.toStringAsFixed(2))),
                                 DataCell(Text(e.factureId?.toString() ?? '')),
-                                DataCell(
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () => _edit(e),
-                                        tooltip: 'Éditer',
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed: () => _delete(e),
-                                        tooltip: 'Supprimer',
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
                             ),
                           )

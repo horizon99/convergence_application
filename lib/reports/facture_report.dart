@@ -44,13 +44,13 @@ class FactureReport {
                         ),
                       ),
                       pw.Text(
-                        invoiceData.mediateur.factureAdresse ?? '',
+                        invoiceData.mediateur.adresse ?? '',
                         style: pw.TextStyle(fontSize: 10),
                       ),
-                      pw.Text(
+/*                       pw.Text(
                         '${invoiceData.mediateur.factureNoPostal} ${invoiceData.mediateur.factureLocalite}',
                         style: pw.TextStyle(fontSize: 10),
-                      ),
+                      ), */
                       pw.Text(
                         invoiceData.mediateur.telephone ?? '',
                         style: pw.TextStyle(fontSize: 10),
@@ -379,17 +379,25 @@ class FactureReport {
 
   pw.Widget _buildFooter(InvoiceData data, Facture factureRecord) {
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
         pw.Padding(
           padding: pw.EdgeInsets.symmetric(horizontal: 1 * PdfPageFormat.cm),
-          child: pw.Text(
+          child: pw.Text( 
             factureRecord.conditions ??
                 'Facture payable net à 30 jours, avec mes remerciements.',
             style: pw.TextStyle(fontSize: 11, fontStyle: pw.FontStyle.italic),
           ),
         ),
+        if (data.dossier.tva != null && data.dossier.tva! > 0)
+          pw.Padding(
+            padding: pw.EdgeInsets.symmetric(horizontal: 1 * PdfPageFormat.cm),
+            child: pw.Text(
+              'TVA ${data.dossier.tva}% incluse (${NumberFormat.currency(symbol: 'CHF ').format((factureRecord.participation ?? 0) * data.dossier.tva! / 100)}) - Identifiant TVA: ${data.mediateur.id_tva ?? ''}.',
+              style: pw.TextStyle(fontSize: 11, fontStyle: pw.FontStyle.italic),
+            ),
+          ),
         //pw.SizedBox(height: 0.5 * PdfPageFormat.cm),
         //pw.Text('IBAN: ${data.mediateur.iban ?? ''}'),
       ],

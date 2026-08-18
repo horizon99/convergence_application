@@ -1007,16 +1007,21 @@ class QRBill {
         break;
       }
     }
-    String decimals = ".00";
-    if (pointPos > -1) decimals = amount.substring(pointPos + 1);
-    if (decimals.length > 2) {
-      amount = amount.substring(0, amount.length - decimals.length + 2);
-    } else if (decimals.length == 1) {
-      amount += "0";
+    String decimals = "";
+    if (pointPos > -1) {
+      decimals = amount.substring(pointPos + 1);
+      if (decimals.length > 2) {
+        amount = amount.substring(0, amount.length - decimals.length + 2);
+      } else if (decimals.length == 1) {
+        amount += "0";
+      }
+    } else {
+      // Pas de point décimal trouvé, ajouter ".00"
+      amount += ".00";
     }
     return amount.trim();
   }
-
+  
   List<Data> _getStructure() {
     if (_version == null) return [];
 

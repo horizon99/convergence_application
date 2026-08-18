@@ -6,16 +6,17 @@ class Mediateur {
   final String? titre;
   final String? adresse;
   final bool? tva;
+  final String? id_tva;
   final String? enTeteRapport;
   final String? localite;
   final Uint8List? logo;
-  final int? logoX;
-  final int? logoY;
-  final int? logoW;
-  final int? logoH;
+  final double? logoX;
+  final double? logoY;
+  final double? logoW;
+  final double? logoH;
   final String? enTetePapier;
-  final int? enTetePapierX;
-  final int? enTetePapierY;
+  final double? enTetePapierX;
+  final double? enTetePapierY;
   final String? factureAdresse;
   final String? factureNoRue;
   final String? factureNoPostal;
@@ -50,7 +51,8 @@ class Mediateur {
     this.factureConditions,
     this.telephone,
     this.iban,
-    this.email
+    this.email,
+    this.id_tva,
   });
 
   factory Mediateur.fromMap(Map<String, dynamic> map) {
@@ -78,7 +80,8 @@ class Mediateur {
       factureConditions: map['facture_conditions'],
       telephone: map['telephone'],
       iban: map['iban'],
-      email: map['email']
+      email: map['email'],
+      id_tva: map['id_tva'],
     );
   }
   Map<String, dynamic> toMap() {
@@ -106,7 +109,8 @@ class Mediateur {
       'facture_conditions': factureConditions,
       'telephone': telephone,
       'iban': iban,
-      'email': email
+      'email': email,
+      'id_tva': id_tva
     };
   }
 }

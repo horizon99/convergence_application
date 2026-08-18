@@ -104,8 +104,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
                   DataColumn(label: Text('Montant encaissé')),
                   DataColumn(label: Text('Solde restant')),
                   DataColumn(label: Text('Payé')),
-                  DataColumn(label: SizedBox.shrink()),
-                  //DataColumn(label: SizedBox.shrink()),
                 ],
                 rows: _rows.map((r) {
                   final f = r.facture;
@@ -113,43 +111,81 @@ class _FactureListScreenState extends State<FactureListScreen> {
                     //color: (f.paye ? WidgetStateProperty.all(Colors.green[50]) : WidgetStateProperty.all(Colors.yellow[50])),
                     cells: [
                       DataCell(
-                        IconButton(
-                          icon: const Icon(
-                            Icons.picture_as_pdf,
-                            size: 18,
-                            color: Colors.red,
-                          ),
-                          tooltip: 'GénérerPDF',
-                          onPressed: () async {
-                            try {
-                              final res = await showDialog<FacturePrintResult?>(
-                                context: context,
-                                builder: (context) => FacturePrintDialog(),
-                              );
-
-                              if (res != null && res.generated) {
-                                await FactureService().generateFacturePDF(
-                                  {},
-                                  idFacture: f.idFacture,
-                                  afficherFacture: res.afficherFacture,
-                                  afficherQrCode: res.afficherQrCode,
-                                  afficherReleveActivites:
-                                      res.afficherReleveActivites,
-                                  afficherFrais: res.afficherFrais,
-                                  afficherMontants: res.afficherMontants,
-                                  montantFacture: f.montantFacture,
-                                  idDossier: f.idDossier,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              tooltip: 'Éditer la facture',
+                              onPressed: () async {
+                                final fact = await FactureRepository()
+                                    .getFactureById(f.idFacture);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FacturePrepare(
+                                      dossierId: f.idDossier,
+                                      dateDu: f.activitesDu ?? f.dateOp,
+                                      dateAu: f.activitesAu ?? f.dateOp,
+                                      facture: fact,
+                                    ),
+                                  ),
                                 );
-                              }
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Echec generation PDF: $e'),
-                                ),
-                              );
-                            }
-                          },
+                                await _loadRows();
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                              tooltip: 'Supprimer la facture',
+                              onPressed: () => _confirmDelete(f),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.picture_as_pdf,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                              tooltip: 'GénérerPDF',
+                              onPressed: () async {
+                                try {
+                                  final res = await showDialog<FacturePrintResult?>(
+                                    context: context,
+                                    builder: (context) => FacturePrintDialog(),
+                                  );
+
+                                  if (res != null && res.generated) {
+                                    await FactureService().generateFacturePDF(
+                                      {},
+                                      idFacture: f.idFacture,
+                                      afficherFacture: res.afficherFacture,
+                                      afficherQrCode: res.afficherQrCode,
+                                      afficherReleveActivites:
+                                          res.afficherReleveActivites,
+                                      afficherFrais: res.afficherFrais,
+                                      afficherMontants: res.afficherMontants,
+                                      montantFacture: f.montantFacture,
+                                      idDossier: f.idDossier,
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Echec generation PDF: $e'),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                       //DataCell(Text(f.idDossier.toString())
@@ -175,39 +211,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
                                 ? Colors.green
                                 : Colors.orange,
                           ),
-                        ),
-                      ),
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, size: 18),
-                              tooltip: 'Éditer la facture',
-                              onPressed: () async {
-                                final fact = await FactureRepository()
-                                    .getFactureById(f.idFacture);
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FacturePrepare(
-                                      dossierId: f.idDossier,
-                                      dateDu: f.activitesDu ?? f.dateOp,
-                                      dateAu: f.activitesAu ?? f.dateOp,
-                                      facture: fact,
-                                    ),
-                                  ),
-                                );
-                                await _loadRows();
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                              tooltip: 'Supprimer la facture',
-                              onPressed: () => _confirmDelete(f),
-                            ),
-                          ],
                         ),
                       ),
                     ],

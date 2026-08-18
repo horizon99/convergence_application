@@ -229,17 +229,6 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
                       final a = activites[index];
 
                       return InkWell(
-                        onTap: () async {
-                          final updated = await showDialog<bool>(
-                            context: context,
-                            builder: (_) =>
-                                EditActiviteDialog(activite: a.activite),
-                          );
-
-                          if (updated == true) {
-                            _filtrer(); // recharge la liste
-                          }
-                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -247,6 +236,50 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
                           ),
                           child: Row(
                             children: [
+                              /// BOUTON MODIFIER
+                              SizedBox(
+                                width: 36,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 28,
+                                    minHeight: 28,
+                                  ),
+                                  tooltip: 'Modifier',
+                                  onPressed: () async {
+                                    final updated = await showDialog<bool>(
+                                      context: context,
+                                      builder: (_) => EditActiviteDialog(
+                                        activite: a.activite,
+                                      ),
+                                    );
+                                    if (updated == true) {
+                                      _filtrer();
+                                    }
+                                  },
+                                ),
+                              ),
+                              /// BOUTON SUPPRIMER
+                              SizedBox(
+                                width: 36,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 28,
+                                    minHeight: 28,
+                                  ),
+                                  tooltip: 'Supprimer',
+                                  onPressed: () => _confirmDelete(a.activite),
+                                ),
+                              ),
                               _cell(
                                 DateFormat(
                                   'dd.MM.yyyy',
@@ -274,17 +307,6 @@ class _ListActivitesScreenState extends State<ListActivitesScreen> {
                                 a.montantFacturable.toStringAsFixed(2),
                                 flex: 2,
                                 align: TextAlign.right,
-                              ),
-
-                              /// BOUTON SUPPRIMER
-                              SizedBox(
-                                width: 36,
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete_outline),
-                                  color: Colors.red[400],
-                                  tooltip: 'Supprimer',
-                                  onPressed: () => _confirmDelete(a.activite),
-                                ),
                               ),
                             ],
                           ),

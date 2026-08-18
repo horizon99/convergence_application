@@ -626,123 +626,156 @@ class _DossierDetailScreenState extends State<DossierDetailScreen> {
                             horizontal: 10,
                           ),
 
-                          title: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 10,
-                            runSpacing: 2,
+                          title: Row(
                             children: [
-                              Text(
-                                partie.nomPrenom,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              if (partie.role?.isNotEmpty == true)
-                                Text(
-                                  partie.role!,
-                                  style: const TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-
-                              if (partie.telFixe?.isNotEmpty == true) ...[
-                                const Text('–'),
-                                Text(partie.telFixe!),
-                              ],
-
-                              if (partie.telMobile?.isNotEmpty == true) ...[
-                                const Text('–'),
-                                Text(partie.telMobile!),
-                              ],
-
-                              if (partie.email?.isNotEmpty == true) ...[
-                                const Text('–'),
-                                MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        AppHelper.launchEmail(address: partie.email!),
-                                    child: Text(
-                                      partie.email!,
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
-                                      ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      size: 18,
+                                      color: Colors.blue,
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-
-                          trailing: Row(
-                            // Boutons Modifier / Supprimer
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Bouton Modifier
-                              IconButton(
-                                icon: const Icon(Icons.edit, size: 18),
-                                tooltip: 'Modifier',
-                                onPressed: () async {
-                                  final result = await Navigator.of(context)
-                                      .push(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 28,
+                                      minHeight: 28,
+                                    ),
+                                    tooltip: 'Modifier',
+                                    onPressed: () async {
+                                      final result = await Navigator.of(
+                                        context,
+                                      ).push(
                                         MaterialPageRoute(
                                           builder: (_) => PartieEditScreen(
-                                            dossierId: widget.dossier.id ?? 0,
+                                            dossierId:
+                                                widget.dossier.id ?? 0,
                                             idPartie: partie.idPartie,
                                           ),
                                         ),
                                       );
-                                  if (result == true) {
-                                    _refreshParties();
-                                  }
-                                },
-                              ),
-
-                              // Bouton Supprimer
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                ),
-                                tooltip: 'Supprimer',
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text(
-                                        'Supprimer l’intervenant',
-                                      ),
-                                      content: Text(
-                                        'Voulez-vous vraiment supprimer ${partie.nomPrenom} de ce dossier ?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, false),
-                                          child: const Text('Annuler'),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                          ),
-                                          onPressed: () =>
-                                              Navigator.pop(context, true),
-                                          child: const Text('Supprimer'),
-                                        ),
-                                      ],
+                                      if (result == true) {
+                                        _refreshParties();
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 18,
+                                      color: Colors.red,
                                     ),
-                                  );
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 28,
+                                      minHeight: 28,
+                                    ),
+                                    tooltip: 'Supprimer',
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder:
+                                            (context) => AlertDialog(
+                                              title: const Text(
+                                                'Supprimer l’intervenant',
+                                              ),
+                                              content: Text(
+                                                'Voulez-vous vraiment supprimer ${partie.nomPrenom} de ce dossier ?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.pop(
+                                                        context,
+                                                        false,
+                                                      ),
+                                                  child: const Text('Annuler'),
+                                                ),
+                                                ElevatedButton(
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.red,
+                                                  ),
+                                                  onPressed:
+                                                      () => Navigator.pop(
+                                                        context,
+                                                        true,
+                                                      ),
+                                                  child: const Text(
+                                                    'Supprimer',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                      );
 
-                                  if (confirm == true) {
-                                    await partiesRepository.deletePartie(
-                                      partie.idPartie,
-                                    );
+                                      if (confirm == true) {
+                                        await partiesRepository.deletePartie(
+                                          partie.idPartie,
+                                        );
 
-                                    _refreshParties();
-                                  }
-                                },
+                                        _refreshParties();
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Wrap(
+                                  crossAxisAlignment:
+                                      WrapCrossAlignment.center,
+                                  spacing: 10,
+                                  runSpacing: 2,
+                                  children: [
+                                    Text(
+                                      partie.nomPrenom,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    if (partie.role?.isNotEmpty == true)
+                                      Text(
+                                        partie.role!,
+                                        style: const TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+
+                                    if (partie.telFixe?.isNotEmpty == true) ...[
+                                      const Text('–'),
+                                      Text(partie.telFixe!),
+                                    ],
+
+                                    if (partie.telMobile?.isNotEmpty == true) ...[
+                                      const Text('–'),
+                                      Text(partie.telMobile!),
+                                    ],
+
+                                    if (partie.email?.isNotEmpty == true) ...[
+                                      const Text('–'),
+                                      MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        child: GestureDetector(
+                                          onTap:
+                                              () => AppHelper.launchEmail(
+                                                address: partie.email!,
+                                              ),
+                                          child: Text(
+                                            partie.email!,
+                                            style: const TextStyle(
+                                              color: Colors.blue,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
